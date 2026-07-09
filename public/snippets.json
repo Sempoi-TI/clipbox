@@ -1,0 +1,50 @@
+[
+  {
+    "id": "default-1",
+    "text": "¡Hola! Bienvenido a ClipBox 🚀. Este es un ejemplo de snippet guardado.",
+    "description": "Welcome message",
+    "tags": ["welcome", "intro"],
+    "category": "All",
+    "createdAt": 1710000000000
+  },
+  {
+    "id": "default-2",
+    "text": "git commit -m \"feat: add copy text snippet applicatiodddddn\"",
+    "description": "Git commit template",
+    "tags": ["git", "commit"],
+    "category": "Code",
+    "createdAt": 1710003600000
+  },
+  {
+    "id": "default-3",
+    "text": "https://docs.astro.build/es/getting-started/",
+    "description": "Astro documentation URL",
+    "tags": ["astro", "docs"],
+    "category": "Link",
+    "createdAt": 1710007200000
+  },
+  {
+    "id": "default-4",
+    "text": "https://docs.astro.build/es/getting-started/",
+    "description": "Astro documentation URL",
+    "tags": ["astro", "docs"],
+    "category": "Link",
+    "createdAt": 1710007200000
+  },
+  {
+    "id": "default-5",
+    "text": "https://docs.astro.build/es/getting-started/",
+    "description": "Astro documentation URL",
+    "tags": ["astro", "docs"],
+    "category": "Link",
+    "createdAt": 1710007200000
+  },
+  {
+    "id": "default-6",
+    "text": "https://docs.astro.build/es/getting-started/",
+    "description": "Astro documentation URL",
+    "tags": ["astro", "docs"],
+    "category": "Link",
+    "createdAt": 1710007200000
+  }
+]

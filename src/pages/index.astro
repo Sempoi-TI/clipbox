@@ -97,33 +97,9 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		createdAt: number;
 	}
 
-	// Predefined/Default snippets to welcome the user
-	const DEFAULT_SNIPPETS: Snippet[] = [
-		{
-			id: 'default-1',
-			text: '¡Hola! Bienvenido a ClipBox 🚀. Este es un ejemplo de snippet guardado.',
-			description: 'Welcome message',
-			tags: ['welcome', 'intro'],
-			category: 'All',
-			createdAt: Date.now() - 3600000 * 3
-		},
-		{
-			id: 'default-2',
-			text: 'git commit -m "feat: add copy text snippet application"',
-			description: 'Git commit template',
-			tags: ['git', 'commit'],
-			category: 'Code',
-			createdAt: Date.now() - 3600000 * 2
-		},
-		{
-			id: 'default-3',
-			text: 'https://docs.astro.build/es/getting-started/',
-			description: 'Astro documentation URL',
-			tags: ['astro', 'docs'],
-			category: 'Link',
-			createdAt: Date.now() - 3600000
-		}
-	];
+	// Predefined snippets can now be loaded from a local JSON file in public/
+	const DEFAULT_SNIPPETS_FILE = '/snippets.json';
+	const DEFAULT_SNIPPETS: Snippet[] = [];
 
 	// State
 	let snippets: Snippet[] = [];
@@ -194,19 +170,32 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
-	// Load snippets from localStorage
-	function loadSnippets() {
+	// Load snippets from localStorage or local JSON file
+	async function loadSnippets() {
 		const stored = localStorage.getItem('clipbox_snippets');
 		if (stored) {
 			try {
 				snippets = JSON.parse(stored);
+				return;
 			} catch (e) {
-				snippets = [...DEFAULT_SNIPPETS];
+				console.warn('Invalid stored snippets, loading defaults.');
 			}
-		} else {
-			snippets = [...DEFAULT_SNIPPETS];
-			saveSnippets();
 		}
+
+		try {
+			const response = await fetch(DEFAULT_SNIPPETS_FILE);
+			if (response.ok) {
+				snippets = await response.json();
+				saveSnippets();
+				return;
+			}
+			console.warn('Unable to load default snippets from JSON file.');
+		} catch (e) {
+			console.warn('Error fetching default snippets:', e);
+		}
+
+		snippets = [...DEFAULT_SNIPPETS];
+		saveSnippets();
 	}
 
 	// Save snippets to localStorage
@@ -550,6 +539,13 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
+	async function init() {
+		await loadSnippets();
+		renderSnippets();
+	}
+
+	init();
+
 	// Handle filter buttons
 	filterButtons.forEach(btn => {
 		btn.addEventListener('click', () => {
@@ -559,10 +555,6 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			renderSnippets();
 		});
 	});
-
-	// Initialize
-	loadSnippets();
-	renderSnippets();
 </script>
 
 <style>
@@ -719,6 +711,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		overflow-y: auto;
 		border-radius: 20px !important;
 		padding: 2rem !important;
+		border: 1px solid rgba(255, 255, 255, 0.12);
 		transform: translateY(20px) scale(0.97);
 		transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	}
