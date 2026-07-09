@@ -1,0 +1,124 @@
+<div class="glass-card">
+	<h2>Crear Nuevo Snippet</h2>
+	<form id="snippet-form" class="snippet-form">
+		<div class="form-group">
+			<label for="snippet-text">Texto / Contenido</label>
+			<textarea 
+				id="snippet-text" 
+				placeholder="Escribe o pega tu texto aquí..." 
+				required
+				rows="5"
+			></textarea>
+		</div>
+
+		<div class="form-group">
+			<label for="snippet-category">Categoría</label>
+			<select id="snippet-category">
+				<option value="General">📂 General</option>
+				<option value="Código">💻 Código</option>
+				<option value="Enlace">🔗 Enlace / URL</option>
+				<option value="Notas">📝 Notas</option>
+			</select>
+		</div>
+
+		<button type="submit" class="btn btn-primary">
+			<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+			Guardar Snippet
+		</button>
+	</form>
+</div>
+
+<style>
+	.glass-card {
+		background: var(--bg-card, rgba(22, 24, 37, 0.7));
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		border-radius: 16px;
+		padding: 1.75rem;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+	}
+
+	h2 {
+		font-family: var(--font-title, sans-serif);
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin: 0 0 1.5rem 0;
+		color: #ffffff;
+	}
+
+	.snippet-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.form-group label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted, #9ca3af);
+	}
+
+	.form-group textarea,
+	.form-group select {
+		background: rgba(15, 16, 22, 0.6);
+		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		border-radius: 10px;
+		color: var(--text-primary, #f3f4f6);
+		padding: 0.875rem;
+		font-family: inherit;
+		font-size: 0.95rem;
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	.form-group textarea::placeholder {
+		color: #52525b;
+	}
+
+	.form-group textarea:focus,
+	.form-group select:focus {
+		border-color: var(--primary, #6366f1);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		font-family: inherit;
+		font-weight: 600;
+		font-size: 0.9rem;
+		padding: 0.75rem 1.25rem;
+		border-radius: 10px;
+		cursor: pointer;
+		border: none;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		width: 100%;
+	}
+
+	.btn-primary {
+		background: linear-gradient(135deg, var(--primary, #6366f1), #4f46e5);
+		color: #ffffff;
+		box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+	}
+
+	.btn-primary:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+		background: linear-gradient(135deg, #4f46e5, #4338ca);
+	}
+
+	.btn-primary:active {
+		transform: translateY(1px);
+	}
+</style>

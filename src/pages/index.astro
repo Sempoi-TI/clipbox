@@ -1,11 +1,415 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Header from '../components/Header.astro';
+import SnippetForm from '../components/SnippetForm.astro';
+import SearchFilter from '../components/SearchFilter.astro';
+import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 ---
 
 <Layout>
-	<Welcome />
+	<main class="app-container">
+		<Header />
+
+		<div class="app-grid">
+			<!-- Panel izquierdo: Creador de Snippets -->
+			<aside class="editor-panel">
+				<SnippetForm />
+			</aside>
+
+			<!-- Panel derecho: Buscador e Historial/Listado -->
+			<section class="list-panel">
+				<SearchFilter />
+
+				<div class="snippets-grid" id="snippets-container">
+					<!-- Se rellenará dinámicamente con JavaScript -->
+					<div class="loading-state">Cargando tus snippets...</div>
+				</div>
+			</section>
+		</div>
+
+		<!-- Toast Container -->
+		<div class="toast-container" id="toast-container"></div>
+		
+		<!-- Snippet Card HTML Template -->
+		<SnippetCardTemplate />
+	</main>
 </Layout>
+
+<script>
+	// Model representing a text snippet
+	interface Snippet {
+		id: string;
+		text: string;
+		category: string;
+		createdAt: number;
+	}
+
+	// Predefined/Default snippets to welcome the user
+	const DEFAULT_SNIPPETS: Snippet[] = [
+		{
+			id: 'default-1',
+			text: '¡Hola! Bienvenido a ClipBox 🚀. Este es un ejemplo de snippet guardado.',
+			category: 'General',
+			createdAt: Date.now() - 3600000 * 3
+		},
+		{
+			id: 'default-2',
+			text: 'git commit -m "feat: add copy text snippet application"',
+			category: 'Código',
+			createdAt: Date.now() - 3600000 * 2
+		},
+		{
+			id: 'default-3',
+			text: 'https://docs.astro.build/es/getting-started/',
+			category: 'Enlace',
+			createdAt: Date.now() - 3600000
+		}
+	];
+
+	// State
+	let snippets: Snippet[] = [];
+	let currentFilter = 'all';
+	let searchQuery = '';
+
+	// DOM Elements
+	const form = document.getElementById('snippet-form') as HTMLFormElement;
+	const textInput = document.getElementById('snippet-text') as HTMLTextAreaElement;
+	const categorySelect = document.getElementById('snippet-category') as HTMLSelectElement;
+	const searchInput = document.getElementById('search-input') as HTMLInputElement;
+	const snippetsContainer = document.getElementById('snippets-container') as HTMLDivElement;
+	const filterButtons = document.querySelectorAll('.filter-btn');
+	const toastContainer = document.getElementById('toast-container') as HTMLDivElement;
+	const template = document.getElementById('snippet-card-template') as HTMLTemplateElement;
+
+	// Load snippets from localStorage
+	function loadSnippets() {
+		const stored = localStorage.getItem('clipbox_snippets');
+		if (stored) {
+			try {
+				snippets = JSON.parse(stored);
+			} catch (e) {
+				snippets = [...DEFAULT_SNIPPETS];
+			}
+		} else {
+			snippets = [...DEFAULT_SNIPPETS];
+			saveSnippets();
+		}
+	}
+
+	// Save snippets to localStorage
+	function saveSnippets() {
+		localStorage.setItem('clipbox_snippets', JSON.stringify(snippets));
+	}
+
+	// Show toast notification
+	function showToast(message: string, type: 'success' | 'info' | 'error' = 'success') {
+		const toast = document.createElement('div');
+		toast.className = `toast toast-${type}`;
+		
+		// Icon based on type
+		let icon = '';
+		if (type === 'success') {
+			icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+		} else if (type === 'info') {
+			icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+		} else {
+			icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+		}
+
+		toast.innerHTML = `
+			<span class="toast-icon">${icon}</span>
+			<span class="toast-message">${message}</span>
+		`;
+
+		toastContainer.appendChild(toast);
+
+		// Animate entrance
+		setTimeout(() => toast.classList.add('visible'), 10);
+
+		// Remove after 3 seconds
+		setTimeout(() => {
+			toast.classList.remove('visible');
+			toast.addEventListener('transitionend', () => toast.remove());
+		}, 3000);
+	}
+
+	// Copy to clipboard with animation feedback
+	async function copyToClipboard(text: string, button: HTMLButtonElement) {
+		try {
+			await navigator.clipboard.writeText(text);
+			
+			// Visual feedback in button
+			const originalHTML = button.innerHTML;
+			button.classList.add('copied');
+			button.innerHTML = `
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+				<span>Copiado</span>
+			`;
+
+			showToast('¡Texto copiado al portapapeles!');
+
+			setTimeout(() => {
+				button.classList.remove('copied');
+				button.innerHTML = originalHTML;
+			}, 2000);
+		} catch (err) {
+			showToast('Error al copiar el texto', 'error');
+		}
+	}
+
+	// Delete a snippet
+	function deleteSnippet(id: string) {
+		snippets = snippets.filter(s => s.id !== id);
+		saveSnippets();
+		renderSnippets();
+		showToast('Snippet eliminado', 'info');
+	}
+
+	// Get SVG icon for category
+	function getCategoryBadge(category: string) {
+		switch (category) {
+			case 'Código':
+				return { label: '💻 Código', class: 'badge-code' };
+			case 'Enlace':
+				return { label: '🔗 Enlace', class: 'badge-link' };
+			case 'Notas':
+				return { label: '📝 Notas', class: 'badge-note' };
+			default:
+				return { label: '📂 General', class: 'badge-general' };
+		}
+	}
+
+	// Render the list of snippets
+	function renderSnippets() {
+		// Filter by search query and category selector
+		const filtered = snippets.filter(s => {
+			const matchesCategory = currentFilter === 'all' || s.category === currentFilter;
+			const matchesSearch = s.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
+			                      s.category.toLowerCase().includes(searchQuery.toLowerCase());
+			return matchesCategory && matchesSearch;
+		});
+
+		// Sort by newest first
+		filtered.sort((a, b) => b.createdAt - a.createdAt);
+
+		if (filtered.length === 0) {
+			snippetsContainer.innerHTML = `
+				<div class="empty-state">
+					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+					<p>No se encontraron snippets que coincidan con la búsqueda.</p>
+				</div>
+			`;
+			return;
+		}
+
+		snippetsContainer.innerHTML = '';
+
+		filtered.forEach(snippet => {
+			const badge = getCategoryBadge(snippet.category);
+			
+			// Clone the card from the template element
+			const clone = document.importNode(template.content, true);
+			
+			// Set badge info
+			const badgeEl = clone.querySelector('.category-badge') as HTMLSpanElement;
+			if (badgeEl) {
+				badgeEl.textContent = badge.label;
+				badgeEl.className = `category-badge ${badge.class}`;
+			}
+
+			// Set text content
+			const codeEl = clone.querySelector('code') as HTMLElement;
+			if (codeEl) {
+				codeEl.textContent = snippet.text;
+			}
+
+			// Add event listener to copy button
+			const copyBtn = clone.querySelector('.btn-copy') as HTMLButtonElement;
+			if (copyBtn) {
+				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
+			}
+
+			// Add event listener to delete button
+			const deleteBtn = clone.querySelector('.delete-btn') as HTMLButtonElement;
+			if (deleteBtn) {
+				deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
+			}
+
+			snippetsContainer.appendChild(clone);
+		});
+	}
+
+	// Handle form submission to add snippet
+	if (form) {
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const text = textInput.value.trim();
+			const category = categorySelect.value;
+
+			if (!text) return;
+
+			const newSnippet: Snippet = {
+				id: crypto.randomUUID ? crypto.randomUUID() : 'snippet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+				text,
+				category,
+				createdAt: Date.now()
+			};
+
+			snippets.unshift(newSnippet);
+			saveSnippets();
+			renderSnippets();
+			
+			// Reset form
+			textInput.value = '';
+			showToast('¡Snippet creado exitosamente!');
+		});
+	}
+
+	// Handle search input
+	if (searchInput) {
+		searchInput.addEventListener('input', (e) => {
+			searchQuery = (e.target as HTMLInputElement).value;
+			renderSnippets();
+		});
+	}
+
+	// Handle filter buttons
+	filterButtons.forEach(btn => {
+		btn.addEventListener('click', () => {
+			filterButtons.forEach(b => b.classList.remove('active'));
+			btn.classList.add('active');
+			currentFilter = btn.getAttribute('data-category') || 'all';
+			renderSnippets();
+		});
+	});
+
+	// Initialize
+	loadSnippets();
+	renderSnippets();
+</script>
+
+<style>
+	/* CSS Variables & Tokens */
+	:root {
+		--primary: #6366f1;
+		--primary-hover: #4f46e5;
+		--primary-glow: rgba(99, 102, 241, 0.3);
+		--accent-success: #10b981;
+		--accent-success-hover: #059669;
+		--accent-info: #0ea5e9;
+		--accent-error: #ef4444;
+		--bg-card: rgba(22, 24, 37, 0.7);
+		--border-color: rgba(255, 255, 255, 0.08);
+		--text-primary: #f3f4f6;
+		--text-muted: #9ca3af;
+		--font-title: 'Plus Jakarta Sans', sans-serif;
+	}
+
+	/* Main container setup */
+	.app-container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2.5rem 1.5rem;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		gap: 2.5rem;
+	}
+
+	/* Layout Grid */
+	.app-grid {
+		display: grid;
+		grid-template-columns: 360px 1fr;
+		gap: 2rem;
+		align-items: start;
+	}
+
+	@media (max-width: 900px) {
+		.app-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	/* List and search panel */
+	.list-panel {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	/* Snippets Grid */
+	.snippets-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 1.25rem;
+	}
+
+	/* Empty state & Loading state */
+	.empty-state, .loading-state {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 4rem 2rem;
+		color: var(--text-muted);
+		text-align: center;
+		border: 1px dashed var(--border-color);
+		border-radius: 16px;
+		background: rgba(22, 24, 37, 0.2);
+	}
+
+	.empty-state svg {
+		opacity: 0.3;
+	}
+
+	/* Toast Notifications container */
+	.toast-container {
+		position: fixed;
+		bottom: 2rem;
+		right: 2rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		z-index: 1000;
+		pointer-events: none;
+	}
+
+	.toast {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		background: #1e2030;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #ffffff;
+		padding: 0.875rem 1.25rem;
+		border-radius: 12px;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+		transform: translateY(100px);
+		opacity: 0;
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		pointer-events: auto;
+		min-width: 280px;
+	}
+
+	.toast.visible {
+		transform: translateY(0);
+		opacity: 1;
+	}
+
+	.toast-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.toast-success .toast-icon { color: var(--accent-success); }
+	.toast-info .toast-icon { color: var(--accent-info); }
+	.toast-error .toast-icon { color: var(--accent-error); }
+
+	.toast-message {
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+</style>
