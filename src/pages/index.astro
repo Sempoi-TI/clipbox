@@ -86,39 +86,53 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	</main>
 </Layout>
 
-<script>
+<script type="module">
 	// Model representing a text snippet
-	interface Snippet {
-		id: string;
-		text: string;
-		description?: string;
-		tags?: string[];
-		category: string;
-		createdAt: number;
-	}
-
-	// Predefined snippets can now be loaded from a local JSON file in public/
-	const DEFAULT_SNIPPETS_FILE = '/snippets.json';
-	const DEFAULT_SNIPPETS: Snippet[] = [];
+	
+	const DEFAULT_DATASET_FILE = '/snippets.json';
+	let selectedDatasetKey = 'default';
+	let selectedDatasetFriendlyName = 'Default snippets';
 
 	// State
-	let snippets: Snippet[] = [];
+	let snippets= [];
 	let currentFilter = 'all';
 	let searchQuery = '';
-	let currentTags: string[] = []; // tags being built in the form
+	let currentTags= []; // tags being built in the form
 
 	// DOM Elements
-	const form = document.getElementById('snippet-form') as HTMLFormElement;
-	const textInput = document.getElementById('snippet-text') as HTMLTextAreaElement;
-	const descriptionInput = document.getElementById('snippet-description') as HTMLInputElement;
-	const categorySelect = document.getElementById('snippet-category') as HTMLSelectElement;
-	const tagsInput = document.getElementById('snippet-tags-input') as HTMLInputElement;
-	const tagChipsRow = document.getElementById('tag-chips-row') as HTMLDivElement;
-	const searchInput = document.getElementById('search-input') as HTMLInputElement;
-	const snippetsContainer = document.getElementById('snippets-container') as HTMLDivElement;
-	const filterButtons = document.querySelectorAll('.filter-btn');
-	const toastContainer = document.getElementById('toast-container') as HTMLDivElement;
-	const template = document.getElementById('snippet-card-template') as HTMLTemplateElement;
+	let form= null;
+	let textInput= null;
+	let descriptionInput= null;
+	let categorySelect= null;
+	let tagsInput= null;
+	let tagChipsRow= null;
+	let searchInput= null;
+	let snippetsContainer= null;
+	let filterButtons= document.querySelectorAll('.filter-btn');
+	let fileInput= null;
+	let fileButton= null;
+	let fileNameDisplay= null;
+	let toastContainer= null;
+	let template= null;
+
+	function initDomElements() {
+		form = document.getElementById('snippet-form');
+		textInput = document.getElementById('snippet-text');
+		descriptionInput = document.getElementById('snippet-description');
+		categorySelect = document.getElementById('snippet-category');
+		tagsInput = document.getElementById('snippet-tags-input');
+		tagChipsRow = document.getElementById('tag-chips-row');
+		searchInput = document.getElementById('search-input');
+		snippetsContainer = document.getElementById('snippets-container');
+		filterButtons = document.querySelectorAll('.filter-btn');
+		fileInput = document.getElementById('snippet-file-input');
+		fileButton = document.getElementById('snippet-file-button');
+		fileNameDisplay = document.getElementById('snippet-file-name');
+		toastContainer = document.getElementById('toast-container');
+		template = document.getElementById('snippet-card-template');
+	}
+
+	initDomElements();
 
 	// ---- Tag builder helpers ----
 	function renderFormTags() {
@@ -142,7 +156,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
-	function addTag(raw: string) {
+	function addTag(raw) {
 		const tag = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 		if (tag && !currentTags.includes(tag)) {
 			currentTags.push(tag);
@@ -170,41 +184,141 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
-	// Load snippets from localStorage or local JSON file
-	async function loadSnippets() {
-		const stored = localStorage.getItem('clipbox_snippets');
+	function getDatasetStorageKey(datasetKey) {
+		return `clipbox_snippets_${datasetKey}`;
+	}
+
+	function getDatasetMetadataKey() {
+		return 'clipbox_dataset_metadata';
+	}
+
+	function saveDatasetMetadata() {
+		const metadata = {
+			selectedDatasetKey,
+			selectedDatasetFriendlyName
+		};
+		localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(metadata));
+	}
+
+	function updateDatasetDisplayName(name) {
+		selectedDatasetFriendlyName = name;
+		if (fileNameDisplay) {
+			fileNameDisplay.textContent = name;
+		}
+	}
+
+	async function loadDefaultSnippets() {
+		selectedDatasetKey = 'default';
+		updateDatasetDisplayName('Default snippets');
+
+		const storageKey = getDatasetStorageKey(selectedDatasetKey);
+		const stored = localStorage.getItem(storageKey);
 		if (stored) {
 			try {
 				snippets = JSON.parse(stored);
+				saveDatasetMetadata();
 				return;
 			} catch (e) {
-				console.warn('Invalid stored snippets, loading defaults.');
+				console.warn('Invalid stored snippets for default dataset, reloading file version.');
 			}
 		}
 
 		try {
-			const response = await fetch(DEFAULT_SNIPPETS_FILE);
+			const response = await fetch(DEFAULT_DATASET_FILE);
 			if (response.ok) {
 				snippets = await response.json();
-				saveSnippets();
+				saveDatasetMetadata();
 				return;
 			}
-			console.warn('Unable to load default snippets from JSON file.');
+			console.warn('Unable to load default snippets from', DEFAULT_DATASET_FILE);
 		} catch (e) {
-			console.warn('Error fetching default snippets:', e);
+			console.warn('Error fetching default snippet file:', e);
 		}
 
-		snippets = [...DEFAULT_SNIPPETS];
-		saveSnippets();
+		snippets = [];
+		saveDatasetMetadata();
 	}
 
-	// Save snippets to localStorage
+	async function loadCustomSnippetsFromFile(file) {
+		if (!file) return;
+		const text = await file.text();
+		try {
+			const parsed = JSON.parse(text);
+			if (!Array.isArray(parsed)) {
+				throw new Error('JSON file must contain an array of snippets');
+			}
+			snippets = parsed;
+			selectedDatasetKey = `custom_${file.name}`;
+			updateDatasetDisplayName(file.name);
+			saveSnippets();
+			showToast(`Loaded ${file.name}`, 'success');
+		} catch (e) {
+			console.error('Error loading custom snippet file:', e);
+			showToast('Invalid JSON file selected', 'error');
+		}
+	}
+
 	function saveSnippets() {
-		localStorage.setItem('clipbox_snippets', JSON.stringify(snippets));
+		const storageKey = getDatasetStorageKey(selectedDatasetKey);
+		localStorage.setItem(storageKey, JSON.stringify(snippets));
+		saveDatasetMetadata();
+	}
+
+	async function loadSnippetsFromMetadata() {
+		const metadata = localStorage.getItem(getDatasetMetadataKey());
+		if (!metadata) {
+			await loadDefaultSnippets();
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(metadata);
+			if (parsed?.selectedDatasetKey === 'default') {
+				await loadDefaultSnippets();
+				return;
+			}
+
+			const storageKey = getDatasetStorageKey(parsed.selectedDatasetKey || 'default');
+			const stored = localStorage.getItem(storageKey);
+			if (stored) {
+				snippets = JSON.parse(stored);
+				selectedDatasetKey = parsed.selectedDatasetKey;
+				updateDatasetDisplayName(parsed.selectedDatasetFriendlyName || parsed.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
+				return;
+			}
+		} catch (e) {
+			console.warn('Invalid dataset metadata, loading default dataset.', e);
+		}
+
+		await loadDefaultSnippets();
+	}
+
+	function wireDatasetFileChooser() {
+		if (!fileInput) return;
+
+		if (fileButton) {
+			fileButton.addEventListener('click', () => {
+				if (fileInput) fileInput.click();
+			});
+		}
+
+		fileInput.addEventListener('change', async () => {
+			const file = fileInput.files?.[0];
+			if (!file) return;
+			await loadCustomSnippetsFromFile(file);
+			renderSnippets();
+		});
+	}
+
+	async function init() {
+		initDomElements();
+		await loadSnippetsFromMetadata();
+		wireDatasetFileChooser();
+		renderSnippets();
 	}
 
 	// Show toast notification
-	function showToast(message: string, type: 'success' | 'info' | 'error' = 'success') {
+	function showToast(message, type) {
 		const toast = document.createElement('div');
 		toast.className = `toast toast-${type}`;
 		
@@ -236,7 +350,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	}
 
 	// Copy to clipboard with animation feedback
-	async function copyToClipboard(text: string, button: HTMLButtonElement) {
+	async function copyToClipboard(text, button) {
 		try {
 			await navigator.clipboard.writeText(text);
 			
@@ -259,7 +373,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	}
 
 	// Delete a snippet
-	function deleteSnippet(id: string) {
+	function deleteSnippet(id) {
 		snippets = snippets.filter(s => s.id !== id);
 		saveSnippets();
 		renderSnippets();
@@ -267,16 +381,16 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	}
 
 	// ---- Edit Modal ----
-	const editModal = document.getElementById('edit-modal') as HTMLDivElement;
-	const editForm = document.getElementById('edit-form') as HTMLFormElement;
-	const editIdInput = document.getElementById('edit-snippet-id') as HTMLInputElement;
-	const editTextInput = document.getElementById('edit-snippet-text') as HTMLTextAreaElement;
-	const editDescInput = document.getElementById('edit-snippet-description') as HTMLInputElement;
-	const editCategorySelect = document.getElementById('edit-snippet-category') as HTMLSelectElement;
-	const editTagsInput = document.getElementById('edit-snippet-tags-input') as HTMLInputElement;
-	const editTagChipsRow = document.getElementById('edit-tag-chips-row') as HTMLDivElement;
+	const editModal = document.getElementById('edit-modal');
+	const editForm = document.getElementById('edit-form');
+	const editIdInput = document.getElementById('edit-snippet-id');
+	const editTextInput = document.getElementById('edit-snippet-text');
+	const editDescInput = document.getElementById('edit-snippet-description');
+	const editCategorySelect = document.getElementById('edit-snippet-category');
+	const editTagsInput = document.getElementById('edit-snippet-tags-input');
+	const editTagChipsRow = document.getElementById('edit-tag-chips-row');
 
-	let editTags: string[] = [];
+	let editTags= [];
 
 	function renderEditTags() {
 		if (!editTagChipsRow) return;
@@ -299,7 +413,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
-	function addEditTag(raw: string) {
+	function addEditTag(raw) {
 		const tag = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 		if (tag && !editTags.includes(tag)) {
 			editTags.push(tag);
@@ -307,7 +421,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		}
 	}
 
-	function openEditModal(id: string) {
+	function openEditModal(id) {
 		const snippet = snippets.find(s => s.id === id);
 		if (!snippet) return;
 		editIdInput.value = snippet.id;
@@ -382,7 +496,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	}
 
 	// Get SVG icon for category
-	function getCategoryBadge(category: string) {
+	function getCategoryBadge(category) {
 		switch (category) {
 			case 'Code':
 				return { label: '💻 Code', class: 'badge-code' };
@@ -437,14 +551,14 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			const clone = document.importNode(template.content, true);
 			
 			// Set badge info
-			const badgeEl = clone.querySelector('.category-badge') as HTMLSpanElement;
+			const badgeEl = clone.querySelector('.category-badge');
 			if (badgeEl) {
 				badgeEl.textContent = badge.label;
 				badgeEl.className = `category-badge ${badge.class}`;
 			}
 
 			// Set description
-			const descEl = clone.querySelector('.snippet-description') as HTMLParagraphElement;
+			const descEl = clone.querySelector('.snippet-description');
 			if (descEl) {
 				if (snippet.description) {
 					descEl.textContent = snippet.description;
@@ -455,13 +569,13 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			}
 
 			// Set text content
-			const codeEl = clone.querySelector('code') as HTMLElement;
+			const codeEl = clone.querySelector('code');
 			if (codeEl) {
 				codeEl.textContent = snippet.text;
 			}
 
 			// Set tags
-			const tagsEl = clone.querySelector('.snippet-tags') as HTMLDivElement;
+			const tagsEl = clone.querySelector('.snippet-tags');
 			if (tagsEl && snippet.tags && snippet.tags.length > 0) {
 				snippet.tags.forEach(tag => {
 					const chip = document.createElement('span');
@@ -472,19 +586,19 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			}
 
 			// Add event listener to copy button
-			const copyBtn = clone.querySelector('.copy-btn') as HTMLButtonElement;
+			const copyBtn = clone.querySelector('.copy-btn');
 			if (copyBtn) {
 				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
 			}
 
 			// Add event listener to edit button
-			const editBtn = clone.querySelector('.edit-btn') as HTMLButtonElement;
+			const editBtn = clone.querySelector('.edit-btn');
 			if (editBtn) {
 				editBtn.addEventListener('click', () => openEditModal(snippet.id));
 			}
 
 			// Add event listener to delete button
-			const deleteBtn = clone.querySelector('.delete-btn') as HTMLButtonElement;
+			const deleteBtn = clone.querySelector('.delete-btn');
 			if (deleteBtn) {
 				deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
 			}
@@ -509,7 +623,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 
 			if (!text) return;
 
-			const newSnippet: Snippet = {
+			const newSnippet= {
 				id: crypto.randomUUID ? crypto.randomUUID() : 'snippet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
 				text,
 				description: description || undefined,
@@ -534,17 +648,10 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	// Handle search input
 	if (searchInput) {
 		searchInput.addEventListener('input', (e) => {
-			searchQuery = (e.target as HTMLInputElement).value;
+			searchQuery = (e.target).value;
 			renderSnippets();
 		});
 	}
-
-	async function init() {
-		await loadSnippets();
-		renderSnippets();
-	}
-
-	init();
 
 	// Handle filter buttons
 	filterButtons.forEach(btn => {
@@ -555,6 +662,8 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			renderSnippets();
 		});
 	});
+
+	init();
 </script>
 
 <style>

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "default-1",
+    "text": "HNCIF",
+    "description": "Welcome message",
+    "tags": ["welcome", "intro"],
+    "category": "All",
+    "createdAt": 1710000000000
+  },
+  {
+    "id": "default-2",
+    "text": "gNCIF es el otro equipo",
+    "description": "Git commit template",
+    "tags": ["git", "commit"],
+    "category": "Code",
+    "createdAt": 1710003600000
+  },
+  {
+    "id": "default-3",
+    "text": "https://sempoi.com",
+    "description": "Astro documentation URL",
+    "tags": ["astro", "docs"],
+    "category": "Link",
+    "createdAt": 1710007200000
+  }
+]

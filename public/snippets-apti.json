@@ -1,0 +1,18 @@
+[
+  {
+    "id": "default-1",
+    "text": "¡Hola! APTI",
+    "description": "Welcome message",
+    "tags": ["welcome", "intro"],
+    "category": "All",
+    "createdAt": 1710000000000
+  },
+  {
+    "id": "default-2",
+    "text": "git APTI",
+    "description": "Git commit template APTI",
+    "tags": ["git", "commit"],
+    "category": "Code",
+    "createdAt": 1710003600000
+  }
+]

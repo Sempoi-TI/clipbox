@@ -10,6 +10,15 @@
 	/>
 </div>
 
+<div class="source-picker-wrapper">
+	<label for="snippet-file-input">Choose dataset</label>
+	<div class="source-file-picker">
+		<button type="button" id="snippet-file-button">Browse JSON file</button>
+		<span class="source-file-name" id="snippet-file-name">Default snippets</span>
+		<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
+	</div>
+</div>
+
 <div class="filter-tags">
 	<button class="filter-btn active" data-category="all">All</button>
 	<button class="filter-btn" data-category="Code">Code</button>
@@ -55,6 +64,50 @@
 		pointer-events: none;
 		display: flex;
 		align-items: center;
+	}
+
+	.source-picker-wrapper {
+		display: grid;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.source-picker-wrapper label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted, #9ca3af);
+	}
+
+	.source-picker-wrapper .source-file-picker {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.source-picker-wrapper button {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		border-radius: 12px;
+		color: var(--text-primary, #f3f4f6);
+		padding: 0.85rem 1rem;
+		font-size: 0.95rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.source-picker-wrapper button:hover {
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.source-picker-wrapper .source-file-name {
+		color: var(--text-muted, #9ca3af);
+		font-size: 0.9rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 240px;
 	}
 
 	.filter-tags {
