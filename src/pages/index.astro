@@ -40,6 +40,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	interface Snippet {
 		id: string;
 		text: string;
+		description?: string;
 		category: string;
 		createdAt: number;
 	}
@@ -49,19 +50,22 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		{
 			id: 'default-1',
 			text: '¡Hola! Bienvenido a ClipBox 🚀. Este es un ejemplo de snippet guardado.',
+			description: 'Welcome message',
 			category: 'All',
 			createdAt: Date.now() - 3600000 * 3
 		},
 		{
 			id: 'default-2',
 			text: 'git commit -m "feat: add copy text snippet application"',
-			category: 'Código',
+			description: 'Git commit template',
+			category: 'Code',
 			createdAt: Date.now() - 3600000 * 2
 		},
 		{
 			id: 'default-3',
 			text: 'https://docs.astro.build/es/getting-started/',
-			category: 'Enlace',
+			description: 'Astro documentation URL',
+			category: 'Link',
 			createdAt: Date.now() - 3600000
 		}
 	];
@@ -74,6 +78,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	// DOM Elements
 	const form = document.getElementById('snippet-form') as HTMLFormElement;
 	const textInput = document.getElementById('snippet-text') as HTMLTextAreaElement;
+	const descriptionInput = document.getElementById('snippet-description') as HTMLInputElement;
 	const categorySelect = document.getElementById('snippet-category') as HTMLSelectElement;
 	const searchInput = document.getElementById('search-input') as HTMLInputElement;
 	const snippetsContainer = document.getElementById('snippets-container') as HTMLDivElement;
@@ -143,7 +148,6 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			button.classList.add('copied');
 			button.innerHTML = `
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-				<span>Text copied!</span>
 			`;
 
 			showToast('Text copied to clipboard!');
@@ -193,6 +197,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		const filtered = snippets.filter(s => {
 			const matchesCategory = currentFilter === 'all' || s.category === currentFilter;
 			const matchesSearch = s.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
+			                      (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
 			                      s.category.toLowerCase().includes(searchQuery.toLowerCase());
 			return matchesCategory && matchesSearch;
 		});
@@ -225,6 +230,17 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 				badgeEl.className = `category-badge ${badge.class}`;
 			}
 
+			// Set description
+			const descEl = clone.querySelector('.snippet-description') as HTMLParagraphElement;
+			if (descEl) {
+				if (snippet.description) {
+					descEl.textContent = snippet.description;
+					descEl.style.display = 'block';
+				} else {
+					descEl.style.display = 'none';
+				}
+			}
+
 			// Set text content
 			const codeEl = clone.querySelector('code') as HTMLElement;
 			if (codeEl) {
@@ -232,7 +248,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			}
 
 			// Add event listener to copy button
-			const copyBtn = clone.querySelector('.btn-copy') as HTMLButtonElement;
+			const copyBtn = clone.querySelector('.copy-btn') as HTMLButtonElement;
 			if (copyBtn) {
 				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
 			}
@@ -252,6 +268,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		form.addEventListener('submit', (e) => {
 			e.preventDefault();
 			const text = textInput.value.trim();
+			const description = descriptionInput ? descriptionInput.value.trim() : '';
 			const category = categorySelect.value;
 
 			if (!text) return;
@@ -259,6 +276,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			const newSnippet: Snippet = {
 				id: crypto.randomUUID ? crypto.randomUUID() : 'snippet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
 				text,
+				description: description || undefined,
 				category,
 				createdAt: Date.now()
 			};
@@ -269,7 +287,10 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			
 			// Reset form
 			textInput.value = '';
-			showToast('¡Snippet creado exitosamente!');
+			if (descriptionInput) {
+				descriptionInput.value = '';
+			}
+			showToast('Snippet created successfully!');
 		});
 	}
 

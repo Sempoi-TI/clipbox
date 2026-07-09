@@ -12,6 +12,16 @@
 		</div>
 
 		<div class="form-group">
+			<label for="snippet-description">Description (Optional)</label>
+			<input 
+				type="text" 
+				id="snippet-description" 
+				placeholder="Add a short description..." 
+				autocomplete="off"
+			/>
+		</div>
+
+		<div class="form-group">
 			<label for="snippet-category">Category</label>
 			<select id="snippet-category">
 				<option value="All">All</option>
@@ -72,7 +82,8 @@
 	}
 
 	.form-group textarea,
-	.form-group select {
+	.form-group select,
+	.form-group input {
 		background: rgba(15, 16, 22, 0.6);
 		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 		border-radius: 10px;
@@ -84,12 +95,14 @@
 		transition: border-color 0.2s, box-shadow 0.2s;
 	}
 
-	.form-group textarea::placeholder {
+	.form-group textarea::placeholder,
+	.form-group input::placeholder {
 		color: #52525b;
 	}
 
 	.form-group textarea:focus,
-	.form-group select:focus {
+	.form-group select:focus,
+	.form-group input:focus {
 		border-color: var(--primary, #6366f1);
 		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 	}
