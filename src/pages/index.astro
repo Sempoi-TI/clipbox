@@ -11,18 +11,18 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		<Header />
 
 		<div class="app-grid">
-			<!-- Panel izquierdo: Creador de Snippets -->
+			<!-- Panel izquierdo: Snippet creator -->
 			<aside class="editor-panel">
 				<SnippetForm />
 			</aside>
 
-			<!-- Panel derecho: Buscador e Historial/Listado -->
+			<!-- Panel derecho: Search engine and History/List -->
 			<section class="list-panel">
 				<SearchFilter />
 
 				<div class="snippets-grid" id="snippets-container">
-					<!-- Se rellenará dinámicamente con JavaScript -->
-					<div class="loading-state">Cargando tus snippets...</div>
+					<!-- Will be dynamically filled with JavaScript -->
+					<div class="loading-state">Loading snippets...</div>
 				</div>
 			</section>
 		</div>
