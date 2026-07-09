@@ -1,4 +1,15 @@
-<div class="search-bar-wrapper">
+<div class="search-filter-container">
+	<div class="search-filter-inner">
+		<div class="source-picker-wrapper">
+			<label for="snippet-file-input">Choose dataset</label>
+			<div class="source-file-picker">
+				<button type="button" id="snippet-file-button">Browse JSON file</button>
+				<span class="source-file-name" id="snippet-file-name">Default snippets</span>
+				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
+			</div>
+		</div>
+
+		<div class="search-bar-wrapper">
 	<div class="search-icon">
 		<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
 	</div>
@@ -8,15 +19,6 @@
 		placeholder="Search by content or category..." 
 		autocomplete="off"
 	/>
-</div>
-
-<div class="source-picker-wrapper">
-	<label for="snippet-file-input">Choose dataset</label>
-	<div class="source-file-picker">
-		<button type="button" id="snippet-file-button">Browse JSON file</button>
-		<span class="source-file-name" id="snippet-file-name">Default snippets</span>
-		<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
-	</div>
 </div>
 
 <div class="filter-tags">
@@ -29,11 +31,15 @@
 	<button class="filter-btn" data-category="Qes">QE's</button>
 	<button class="filter-btn" data-category="Aks">Aks</button>
 </div>
+</div>
+</div>
 
 <style>
 	.search-bar-wrapper {
 		position: relative;
 		width: 100%;
+		max-width: 92%;
+    margin-bottom: 1rem;
 	}
 
 	.search-bar-wrapper input {
@@ -66,13 +72,29 @@
 		align-items: center;
 	}
 
+	.search-filter-container {
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.search-filter-inner {
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+		margin: 0;
+	}
+
 	.source-picker-wrapper {
 		display: grid;
+		width: 100%;
+		max-width: 100%;
 		gap: 0.5rem;
 		margin-bottom: 1rem;
 	}
 
 	.source-picker-wrapper label {
+		display: block;
 		font-size: 0.75rem;
 		font-weight: 600;
 		text-transform: uppercase;
@@ -82,11 +104,14 @@
 
 	.source-picker-wrapper .source-file-picker {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.75rem;
+		max-width: 100%;
 	}
 
 	.source-picker-wrapper button {
+		flex-shrink: 0;
 		background: rgba(255, 255, 255, 0.05);
 		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 		border-radius: 12px;
@@ -121,8 +146,8 @@
 		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 		color: var(--text-muted, #9ca3af);
 		padding: 0.5rem 1rem;
-		border-radius: 20px;
-		font-size: 0.85rem;
+		border-radius: 15px;
+		font-size: 0.65rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s;
