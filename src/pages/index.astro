@@ -49,7 +49,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		{
 			id: 'default-1',
 			text: '¡Hola! Bienvenido a ClipBox 🚀. Este es un ejemplo de snippet guardado.',
-			category: 'General',
+			category: 'All',
 			createdAt: Date.now() - 3600000 * 3
 		},
 		{
@@ -143,17 +143,17 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 			button.classList.add('copied');
 			button.innerHTML = `
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-				<span>Copiado</span>
+				<span>Text copied!</span>
 			`;
 
-			showToast('¡Texto copiado al portapapeles!');
+			showToast('Text copied to clipboard!');
 
 			setTimeout(() => {
 				button.classList.remove('copied');
 				button.innerHTML = originalHTML;
 			}, 2000);
 		} catch (err) {
-			showToast('Error al copiar el texto', 'error');
+			showToast('Error to copy text', 'error');
 		}
 	}
 
@@ -162,20 +162,28 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		snippets = snippets.filter(s => s.id !== id);
 		saveSnippets();
 		renderSnippets();
-		showToast('Snippet eliminado', 'info');
+		showToast('Snippet deleted', 'info');
 	}
 
 	// Get SVG icon for category
 	function getCategoryBadge(category: string) {
 		switch (category) {
-			case 'Código':
-				return { label: '💻 Código', class: 'badge-code' };
-			case 'Enlace':
-				return { label: '🔗 Enlace', class: 'badge-link' };
-			case 'Notas':
-				return { label: '📝 Notas', class: 'badge-note' };
+			case 'Code':
+				return { label: '💻 Code', class: 'badge-code' };
+			case 'Link':
+				return { label: '🔗 Link', class: 'badge-link' };
+			case 'Notes':
+				return { label: '📝 Notes', class: 'badge-note' };
+			case 'Core':
+				return { label: '👑 Core', class: 'badge-core' };
+			case 'Devs':
+				return { label: '👨‍💻 Devs', class: 'badge-devs' };
+			case 'Qes':
+				return { label: '👩‍🏫 Qes', class: 'badge-qes' };
+			case 'Aks':
+				return { label: '🎓 Aks', class: 'badge-aks' };
 			default:
-				return { label: '📂 General', class: 'badge-general' };
+				return { label: '👺 All', class: 'badge-all' };
 		}
 	}
 
