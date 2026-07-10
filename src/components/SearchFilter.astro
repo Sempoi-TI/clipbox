@@ -38,7 +38,7 @@ import categories from '../data/categories.json';
 	<input 
 		type="text" 
 		id="search-input" 
-		placeholder="Search by content or category..." 
+		placeholder="Search by content, category or tag" 
 		autocomplete="off"
 	/>
 </div>
@@ -52,6 +52,12 @@ import categories from '../data/categories.json';
 			{cat.emoji} {cat.label}
 		</button>
 	))}
+</div>
+
+<!-- Tag filter row — populated dynamically by JS -->
+<div class="tag-filter-row" id="tag-filter-row" hidden>
+	<span class="tag-filter-label"># Tags</span>
+	<div class="tag-filter-chips" id="tag-filter-chips"></div>
 </div>
 </div>
 </div>
