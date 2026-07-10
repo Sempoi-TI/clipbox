@@ -94,8 +94,9 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	const DEFAULT_DATASET_FILE = '/snippets.json';
 	let selectedDatasetKey = 'default';
 	let selectedDatasetFriendlyName = 'Default snippets';
+  let sortOrderAscending = false;
 
-	// State
+  // State
 	let snippets= [];
 	let currentFilter = 'all';
 	let searchQuery = '';
@@ -529,7 +530,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		});
 	}
 
-	// Get SVG icon for category
+  const sortBtn = document.getElementById('sort-order-btn');
+  if (sortBtn) {
+      sortBtn.addEventListener('click', () => {
+          sortOrderAscending = !sortOrderAscending;
+          const text = document.getElementById('sort-order-text');
+          if (text) {
+              text.textContent = sortOrderAscending ? '↑ Ascendente' : '↓ Descendente';
+          }
+          renderSnippets();
+      });
+  }
+
+  // Get SVG icon for category
 	function getCategoryBadge(category) {
 		const categoryData = CATEGORIES.find(cat => cat.value === category);
 		if (categoryData) {
@@ -550,8 +563,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			return matchesCategory && matchesSearch;
 		});
     
-		// Sort by id
-		filtered.sort((a, b) => a.id - b.id);
+    // Sort by id in current order
+    filtered.sort((a, b) => sortOrderAscending ? a.id - b.id : b.id - a.id);
 
 		if (filtered.length === 0) {
 			snippetsContainer.innerHTML = `

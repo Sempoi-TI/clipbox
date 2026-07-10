@@ -9,6 +9,14 @@ import categories from '../data/categories.json';
 			<div class="source-file-picker">
 				<button type="button" id="snippet-file-button">Browse JSON file</button>
 				<button type="button" id="export-snippets-button" class="export-btn">Export JSON</button>
+
+
+				<div class="sort-controls">
+					<button id="sort-order-btn" title="Toggle sort order" class="sort-btn">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+						<span id="sort-order-text"></span>
+					</button>
+				</div>
 				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
 			</div>
 		</div>
@@ -39,6 +47,34 @@ import categories from '../data/categories.json';
 </div>
 
 <style>
+  .sort-controls {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    padding: 0.5rem 0.875rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.sort-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: var(--primary);
+}
 	.search-bar-wrapper {
 		position: relative;
 		width: 100%;
