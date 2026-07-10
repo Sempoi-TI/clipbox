@@ -38,31 +38,20 @@ La estructura del proyecto es la siguiente:
 
 Para más información sobre la estructura de un proyecto Astro, consulta la [guía sobre estructura de proyectos](https://docs.astro.build/en/basics/project-structure/).
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src     
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-```
-
 ## 🧞 Comandos
 
 Todos los comandos se ejecutan desde la raíz del proyecto:
 
-| Comando                   | Acción                                               |
-| :------------------------ | :----------------------------------------------------|
-| `npm install`             | Instala las dependencias                             |
-| `npm run dev`             | Inicia el servidor de desarrollo en `localhost:4321` |
-| `npm run build`           | Construye para producción en `./dist/`               |
-| `npm run preview`         | Vista previa del build local                         |
-| `astro dev --background`  | Inicia el servidor en modo background                |
-| `astro dev stop`          | Detiene el servidor en background                    |
+| Comando                   | Acción                                            |
+| :------------------------ | :------------------------------------------------ |
+| `npm install`             | Instala las dependencias                          |
+| `npm run dev`             | Inicia servidor de desarrollo en `localhost:4321` |
+| `npm run build`           | Construye para producción en `./dist/`            |
+| `npm run preview`         | Vista previa del build local                      |
+| `astro dev --background`  | Inicia servidor en modo background                |
+| `astro dev stop`          | Detiene servidor en background                    |
 
-## �️ Desarrollo
+## 🛠️ Desarrollo
 
 ### Requisitos
 
