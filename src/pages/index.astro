@@ -199,8 +199,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	function saveDatasetMetadata() {
 		const metadata = {
-			selectedDatasetKey,
-			selectedDatasetFriendlyName
+			selectedDatasetFriendlyName,
+			selectedDatasetKey
 		};
 		localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(metadata));
 	}
@@ -377,11 +377,14 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		// Animate entrance
 		setTimeout(() => toast.classList.add('visible'), 10);
 
-		// Remove after 3 seconds
+		// Remove after 2 seconds
 		setTimeout(() => {
 			toast.classList.remove('visible');
-			toast.addEventListener('transitionend', () => toast.remove());
-		}, 3000);
+			const removeToast = () => toast.remove();
+			toast.addEventListener('transitionend', removeToast, { once: true });
+			// Fallback if transitionend does not fire (e.g. reduced motion)
+			setTimeout(removeToast, 350);
+		}, 2000);
 	}
 
 	// Copy to clipboard with animation feedback
@@ -669,8 +672,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				text,
 				description: description || undefined,
 				tags: tags.length > 0 ? tags : undefined,
-				category,
-				createdAt: Date.now()
+				category
 			};
 
 			snippets.unshift(newSnippet);
