@@ -1,0 +1,58 @@
+[
+  {
+    "id": "all",
+    "value": "All",
+    "label": "All",
+    "emoji": "👺",
+    "badge": "badge-all"
+  },
+  {
+    "id": "code",
+    "value": "Code",
+    "label": "Code",
+    "emoji": "💻",
+    "badge": "badge-code"
+  },
+  {
+    "id": "link",
+    "value": "Link",
+    "label": "Link",
+    "emoji": "🔗",
+    "badge": "badge-link"
+  },
+  {
+    "id": "notes",
+    "value": "Notes",
+    "label": "Notes",
+    "emoji": "📝",
+    "badge": "badge-note"
+  },
+  {
+    "id": "core",
+    "value": "Core",
+    "label": "Core",
+    "emoji": "👑",
+    "badge": "badge-core"
+  },
+  {
+    "id": "devs",
+    "value": "Devs",
+    "label": "Devs",
+    "emoji": "👨‍💻",
+    "badge": "badge-devs"
+  },
+  {
+    "id": "qes",
+    "value": "Qes",
+    "label": "QE's",
+    "emoji": "👩‍🏫",
+    "badge": "badge-qes"
+  },
+  {
+    "id": "aks",
+    "value": "Aks",
+    "label": "Aks",
+    "emoji": "🎓",
+    "badge": "badge-aks"
+  }
+]

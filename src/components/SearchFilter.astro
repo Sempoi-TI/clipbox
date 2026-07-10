@@ -1,3 +1,7 @@
+---
+import categories from '../data/categories.json';
+---
+
 <div class="search-filter-container">
 	<div class="search-filter-inner">
 		<div class="source-picker-wrapper">
@@ -22,14 +26,14 @@
 </div>
 
 <div class="filter-tags">
-	<button class="filter-btn active" data-category="all">All</button>
-	<button class="filter-btn" data-category="Code">Code</button>
-	<button class="filter-btn" data-category="Link">Link</button>
-	<button class="filter-btn" data-category="Notes">Notes</button>
-	<button class="filter-btn" data-category="Core">Core</button>
-	<button class="filter-btn" data-category="Devs">DEV's</button>
-	<button class="filter-btn" data-category="Qes">QE's</button>
-	<button class="filter-btn" data-category="Aks">Aks</button>
+	{categories.map(cat => (
+		<button 
+			class={`filter-btn ${cat.id === 'all' ? 'active' : ''}`} 
+			data-category={cat.id === 'all' ? 'all' : cat.value}
+		>
+			{cat.emoji} {cat.label}
+		</button>
+	))}
 </div>
 </div>
 </div>

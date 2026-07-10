@@ -1,3 +1,10 @@
+---
+import categories from '../data/categories.json';
+
+// Filter out 'All' for form categories
+const formCategories = categories.filter(cat => cat.id !== 'all');
+---
+
 <div class="glass-card">
 	<h2>New Snippet</h2>
 	<form id="snippet-form" class="snippet-form">
@@ -38,14 +45,9 @@
 		<div class="form-group">
 			<label for="snippet-category">Category</label>
 			<select id="snippet-category">
-				<option value="All">All</option>
-				<option value="Code">Code</option>
-				<option value="Link">Link</option>
-				<option value="Notes">Notes</option>
-				<option value="Core">Core</option>
-				<option value="Devs">DEV's</option>
-				<option value="Qes">QE's</option>
-				<option value="Aks">Aks</option>
+				{formCategories.map(cat => (
+					<option value={cat.value}>{cat.label}</option>
+				))}
 			</select>
 		</div>
 

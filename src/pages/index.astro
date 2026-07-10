@@ -4,6 +4,10 @@ import Header from '../components/Header.astro';
 import SnippetForm from '../components/SnippetForm.astro';
 import SearchFilter from '../components/SearchFilter.astro';
 import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
+import categories from '../data/categories.json';
+
+// Filter out 'All' for form categories
+const formCategories = categories.filter(cat => cat.id !== 'all');
 ---
 
 <Layout>
@@ -60,14 +64,9 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 					<div class="form-group">
 						<label for="edit-snippet-category">Category</label>
 						<select id="edit-snippet-category">
-							<option value="All">All</option>
-							<option value="Code">Code</option>
-							<option value="Link">Link</option>
-							<option value="Notes">Notes</option>
-							<option value="Core">Core</option>
-							<option value="Devs">DEV's</option>
-							<option value="Qes">QE's</option>
-							<option value="Aks">Aks</option>
+							{categories.map(cat => (
+								<option value={cat.value}>{cat.label}</option>
+							))}
 						</select>
 					</div>
 					<div class="modal-actions">
@@ -86,7 +85,10 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	</main>
 </Layout>
 
-<script type="module">
+<script type="module" define:vars={{ categories }}>
+	// Categories data injected from Astro
+	const CATEGORIES = categories;
+
 	// Model representing a text snippet
 	
 	const DEFAULT_DATASET_FILE = '/snippets.json';
@@ -529,24 +531,11 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 
 	// Get SVG icon for category
 	function getCategoryBadge(category) {
-		switch (category) {
-			case 'Code':
-				return { label: '💻 Code', class: 'badge-code' };
-			case 'Link':
-				return { label: '🔗 Link', class: 'badge-link' };
-			case 'Notes':
-				return { label: '📝 Notes', class: 'badge-note' };
-			case 'Core':
-				return { label: '👑 Core', class: 'badge-core' };
-			case 'Devs':
-				return { label: '👨‍💻 Devs', class: 'badge-devs' };
-			case 'Qes':
-				return { label: '👩‍🏫 Qes', class: 'badge-qes' };
-			case 'Aks':
-				return { label: '🎓 Aks', class: 'badge-aks' };
-			default:
-				return { label: '👺 All', class: 'badge-all' };
+		const categoryData = CATEGORIES.find(cat => cat.value === category);
+		if (categoryData) {
+			return { label: `${categoryData.emoji} ${categoryData.label}`, class: categoryData.badge };
 		}
+		return { label: '👺 All', class: 'badge-all' };
 	}
 
 	// Render the list of snippets
