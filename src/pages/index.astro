@@ -261,7 +261,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	}
 
 	function saveSnippets() {
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
+		const storageKey = "clipbox_snippets";
 		localStorage.setItem(storageKey, JSON.stringify(snippets));
 		saveDatasetMetadata();
 	}
@@ -319,7 +319,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 
 	async function exportSnippetsToClipboard() {
 		try {
-			const storageKey = 'clipbox_snippets_default';
+			const storageKey = 'clipbox_snippets';
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) {
 				showToast('No snippets found in localStorage for default dataset', 'error');

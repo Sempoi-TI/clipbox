@@ -1,46 +1,103 @@
-# Astro Starter Kit: Basics
+# Clipbox
 
-```sh
-npm create astro@latest -- --template basics
+Una aplicación web moderna para organizar, guardar y buscar snippets de código. Construida con [Astro](https://astro.build).
+
+## ✨ Características
+
+- 🔍 **Búsqueda inteligente**: Filtra snippets por nombre, descripción o contenido
+- 📝 **Gestión de snippets**: Crea, edita y organiza tus snippets favoritos
+- 📦 **Múltiples colecciones**: Soporta diferentes colecciones de snippets (APTI, NCIF, etc.)
+- ⚡ **Rendimiento**: Construido con Astro para máxima velocidad
+- 🎨 **Interfaz limpia**: Diseño intuitivo y responsive
+
+## 🚀 Estructura del Proyecto
+
+La estructura del proyecto es la siguiente:
+
+```
+/
+├── public/
+│   ├── snippets.json              # Colección principal de snippets
+│   ├── snippets-apti.json         # Snippets APTI
+│   └── snippets-ncif.json         # Snippets NCIF
+├── src/
+│   ├── assets/                    # Recursos estáticos
+│   ├── components/
+│   │   ├── Header.astro           # Encabezado de la aplicación
+│   │   ├── SearchFilter.astro     # Componente de búsqueda y filtrado
+│   │   ├── SnippetCardTemplate.astro  # Plantilla de tarjeta de snippet
+│   │   └── SnippetForm.astro      # Formulario para crear/editar snippets
+│   ├── layouts/
+│   │   └── Layout.astro           # Layout principal
+│   └── pages/
+│       └── index.astro            # Página de inicio
+├── astro.config.mjs               # Configuración de Astro
+├── tsconfig.json                  # Configuración de TypeScript
+└── package.json                   # Dependencias del proyecto
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+Para más información sobre la estructura de un proyecto Astro, consulta la [guía sobre estructura de proyectos](https://docs.astro.build/en/basics/project-structure/).
 
 ```text
 /
 ├── public/
 │   └── favicon.svg
-├── src
+├── src     
 │   ├── assets
 │   │   └── astro.svg
 │   ├── components
 │   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## 🧞 Comandos
 
-## 🧞 Commands
+Todos los comandos se ejecutan desde la raíz del proyecto:
 
-All commands are run from the root of the project, from a terminal:
+| Comando                   | Acción                                               |
+| :------------------------ | :----------------------------------------------------|
+| `npm install`             | Instala las dependencias                             |
+| `npm run dev`             | Inicia el servidor de desarrollo en `localhost:4321` |
+| `npm run build`           | Construye para producción en `./dist/`               |
+| `npm run preview`         | Vista previa del build local                         |
+| `astro dev --background`  | Inicia el servidor en modo background                |
+| `astro dev stop`          | Detiene el servidor en background                    |
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## �️ Desarrollo
 
-## 👀 Want to learn more?
+### Requisitos
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- Node.js >= 22.12.0
+- npm o pnpm
+
+### Instalación
+
+```bash
+npm install
+```
+
+### Iniciar desarrollo
+
+```bash
+# Modo normal
+npm run dev
+
+# Modo background (recomendado)
+astro dev --background
+```
+
+La aplicación estará disponible en `http://localhost:4321`
+
+### Compilar para producción
+
+```bash
+npm run build
+```
+
+Los archivos compilados se guardarán en el directorio `dist/`.
+
+## 📚 Más información
+
+- [Documentación de Astro](https://docs.astro.build)
+- [Guía de estructura de proyectos](https://docs.astro.build/en/basics/project-structure/)
+- [Guía de componentes Astro](https://docs.astro.build/en/basics/astro-components/)
+- [Guía de enrutamiento y páginas dinámicas](https://docs.astro.build/en/guides/routing/)
