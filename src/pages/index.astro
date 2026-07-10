@@ -335,7 +335,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				return;
 			}
 
-			const exportText = JSON.stringify(parsed, null, 2);
+			const sorted = [...parsed].sort((a, b) => a.id - b.id);
+			const exportText = JSON.stringify(sorted, null, 2);
 			await navigator.clipboard.writeText(exportText);
 			showToast(`Exported ${parsed.length} default snippets to clipboard!`, 'success');
 		} catch (err) {
