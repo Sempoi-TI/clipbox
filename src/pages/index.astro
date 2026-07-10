@@ -111,6 +111,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 	let filterButtons= document.querySelectorAll('.filter-btn');
 	let fileInput= null;
 	let fileButton= null;
+	let exportButton= null;
 	let fileNameDisplay= null;
 	let toastContainer= null;
 	let template= null;
@@ -127,6 +128,7 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		filterButtons = document.querySelectorAll('.filter-btn');
 		fileInput = document.getElementById('snippet-file-input');
 		fileButton = document.getElementById('snippet-file-button');
+		exportButton = document.getElementById('export-snippets-button');
 		fileNameDisplay = document.getElementById('snippet-file-name');
 		toastContainer = document.getElementById('toast-container');
 		template = document.getElementById('snippet-card-template');
@@ -310,10 +312,40 @@ import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 		});
 	}
 
+	function wireExportButton() {
+		if (!exportButton) return;
+		exportButton.addEventListener('click', exportSnippetsToClipboard);
+	}
+
+	async function exportSnippetsToClipboard() {
+		try {
+			const storageKey = 'clipbox_snippets_default';
+			const raw = localStorage.getItem(storageKey);
+			if (!raw) {
+				showToast('No snippets found in localStorage for default dataset', 'error');
+				return;
+			}
+
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) {
+				showToast('Default snippets data is invalid', 'error');
+				return;
+			}
+
+			const exportText = JSON.stringify(parsed, null, 2);
+			await navigator.clipboard.writeText(exportText);
+			showToast(`Exported ${parsed.length} default snippets to clipboard!`, 'success');
+		} catch (err) {
+			console.error('Export failed', err);
+			showToast('Failed to copy JSON to clipboard', 'error');
+		}
+	}
+
 	async function init() {
 		initDomElements();
 		await loadSnippetsFromMetadata();
 		wireDatasetFileChooser();
+		wireExportButton();
 		renderSnippets();
 	}
 
