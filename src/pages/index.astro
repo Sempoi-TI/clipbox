@@ -549,9 +549,9 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			                      s.category.toLowerCase().includes(searchQuery.toLowerCase());
 			return matchesCategory && matchesSearch;
 		});
-
-		// Sort by newest first
-		filtered.sort((a, b) => b.createdAt - a.createdAt);
+    
+		// Sort by id
+		filtered.sort((a, b) => a.id - b.id);
 
 		if (filtered.length === 0) {
 			snippetsContainer.innerHTML = `
@@ -628,7 +628,14 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		});
 	}
 
-	// Handle form submission to add snippet
+  // Get next numeric ID
+  function getNextSnippetId() {
+      if (snippets.length === 0) return 1;
+      const maxId = Math.max(...snippets.map(s => typeof s.id === 'number' ? s.id : 0));
+      return maxId + 1;
+  }
+
+  // Handle form submission to add snippet
 	if (form) {
 		form.addEventListener('submit', (e) => {
 			e.preventDefault();
@@ -645,7 +652,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			if (!text) return;
 
 			const newSnippet= {
-				id: crypto.randomUUID ? crypto.randomUUID() : 'snippet-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+				id: getNextSnippetId(),
 				text,
 				description: description || undefined,
 				tags: tags.length > 0 ? tags : undefined,
