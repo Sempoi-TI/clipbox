@@ -15,14 +15,14 @@
   },
   {
     "id": 3,
-    "text": "https://docs.astro.build/es/getting-started/",
+    "text": "https://www.facebook.com/",
     "description": "Astro documentation URL",
     "tags": ["astro", "docs"],
     "category": "Link"
   },
   {
     "id": 4,
-    "text": "https://docs.astro.build/es/getting-started/",
+    "text": "https://mail.google.com/mail/u/0/#inbox",
     "description": "Astro documentation URL",
     "tags": ["astro", "docs"],
     "category": "Link"

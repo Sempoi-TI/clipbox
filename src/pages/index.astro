@@ -93,7 +93,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	
 	const DEFAULT_DATASET_FILE = '/snippets.json';
 	let selectedDatasetKey = 'default';
-	let selectedDatasetFriendlyName = 'Default snippets';
+	let selectedDatasetFriendlyName = 'snippets.json';
   let sortOrderAscending = false;
 
   // State
@@ -214,7 +214,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	async function loadDefaultSnippets() {
 		selectedDatasetKey = 'default';
-		updateDatasetDisplayName('Default snippets');
+		updateDatasetDisplayName(DEFAULT_DATASET_FILE.split('/').pop() || 'snippets.json');
 
 		const storageKey = getDatasetStorageKey(selectedDatasetKey);
 		const stored = localStorage.getItem(storageKey);
@@ -533,14 +533,23 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		});
 	}
 
+  function updateSortButtonUI() {
+    const sortBtn = document.getElementById('sort-order-btn');
+    const text = document.getElementById('sort-order-text');
+    if (!sortBtn || !text) return;
+
+    sortBtn.classList.toggle('sort-asc', sortOrderAscending);
+    sortBtn.classList.toggle('sort-desc', !sortOrderAscending);
+    sortBtn.setAttribute('aria-pressed', String(sortOrderAscending));
+    text.textContent = sortOrderAscending ? 'Ascendente' : 'Descendente';
+  }
+
   const sortBtn = document.getElementById('sort-order-btn');
   if (sortBtn) {
+      updateSortButtonUI();
       sortBtn.addEventListener('click', () => {
           sortOrderAscending = !sortOrderAscending;
-          const text = document.getElementById('sort-order-text');
-          if (text) {
-              text.textContent = sortOrderAscending ? '↑ Ascendente' : '↓ Descendente';
-          }
+          updateSortButtonUI();
           renderSnippets();
       });
   }
@@ -552,6 +561,22 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			return { label: `${categoryData.emoji} ${categoryData.label}`, class: categoryData.badge };
 		}
 		return { label: '👺 All', class: 'badge-all' };
+	}
+
+	function getSnippetUrl(text) {
+		const trimmed = text.trim();
+		if (!trimmed) return null;
+		if (/^https?:\/\//i.test(trimmed)) return trimmed;
+		try {
+			const url = new URL(trimmed.startsWith('//') ? `https:${trimmed}` : `https://${trimmed}`);
+			return url.href;
+		} catch {
+			return null;
+		}
+	}
+
+	function isSnippetLink(snippet) {
+		return snippet.category === 'Link' && getSnippetUrl(snippet.text) !== null;
 	}
 
 	// Render the list of snippets
@@ -626,6 +651,18 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			const copyBtn = clone.querySelector('.copy-btn');
 			if (copyBtn) {
 				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
+			}
+
+			// Show open-link button only for link snippets
+			const openLinkBtn = clone.querySelector('.open-link-btn');
+			if (openLinkBtn) {
+				const url = getSnippetUrl(snippet.text);
+				if (isSnippetLink(snippet) && url) {
+					openLinkBtn.href = url;
+					openLinkBtn.hidden = false;
+				} else {
+					openLinkBtn.hidden = true;
+				}
 			}
 
 			// Add event listener to edit button
