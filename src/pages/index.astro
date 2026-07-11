@@ -799,9 +799,16 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	function isSnippetContentTruncated(element) {
 		if (!element) return false;
+		const codeElement = element.querySelector('code');
 		const verticalOverflow = element.scrollHeight - element.clientHeight > 1;
 		const horizontalOverflow = element.scrollWidth - element.clientWidth > 1;
-		return verticalOverflow || horizontalOverflow;
+		const nestedHorizontalOverflow = codeElement
+			? (codeElement.scrollWidth - codeElement.clientWidth > 1) || (codeElement.scrollWidth - element.clientWidth > 1)
+			: false;
+		const nestedVerticalOverflow = codeElement
+			? (codeElement.scrollHeight - codeElement.clientHeight > 1) || (codeElement.scrollHeight - element.clientHeight > 1)
+			: false;
+		return verticalOverflow || horizontalOverflow || nestedHorizontalOverflow || nestedVerticalOverflow;
 	}
 
 	function positionSnippetPreviewTooltip(anchor) {
@@ -1141,10 +1148,10 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		overflow: auto;
 		padding: 0.9rem 1rem;
 		border-radius: 14px;
-		border: 1px solid rgba(99, 102, 241, 0.22);
-		background: rgba(13, 18, 34, 0.94);
+		border: 1px solid var(--preview-tooltip-border);
+		background: var(--preview-tooltip-bg);
 		color: var(--text-primary);
-		box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+		box-shadow: var(--preview-tooltip-shadow);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 		font-family: 'Fira Code', 'Courier New', Courier, monospace;
