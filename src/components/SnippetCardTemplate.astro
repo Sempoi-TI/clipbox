@@ -170,6 +170,10 @@
 		padding: 0.6rem 1rem;
 		min-height: unset;
 		gap: 0.75rem;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		overflow: hidden;
 	}
 
 	.view-list .snippet-card:hover {
@@ -195,6 +199,10 @@
 		overflow: hidden;
 	}
 
+	.view-list .card-body > * {
+		min-width: 0;
+	}
+
 	/* Hide description in list mode — text is enough */
 	.view-list .snippet-description { display: none !important; }
 
@@ -202,16 +210,26 @@
 	.view-list .snippet-content {
 		flex: 1 1 0;
 		min-width: 0;
+		display: block;
 		max-height: unset;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		word-break: normal;
 		font-size: 0.82rem;
+	}
+
+	.view-list .snippet-content code {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* Tags inline, no wrap, scrollable */
 	.view-list .snippet-tags {
 		flex-shrink: 0;
+		min-width: 0;
 		flex-wrap: nowrap;
 		overflow: hidden;
 		max-width: 180px;
@@ -226,6 +244,11 @@
 		flex-shrink: 0;
 		margin-bottom: 0;
 		order: 1; /* move actions to the right */
+		min-width: fit-content;
+	}
+
+	.view-list .card-header-actions {
+		flex-wrap: nowrap;
 	}
 
 	/* Hide the badge from card-header — shown separately */
