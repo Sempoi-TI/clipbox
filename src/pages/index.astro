@@ -80,6 +80,29 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			</div>
 		</div>
 
+		<!-- Variables Copy Modal -->
+		<div class="modal-backdrop" id="variables-modal" aria-hidden="true">
+			<div class="modal-box glass-card modal-box-compact">
+				<div class="modal-header">
+					<h2>Completar variables</h2>
+					<button class="modal-close-btn" id="variables-modal-close-btn" title="Close">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+					</button>
+				</div>
+				<form id="variables-form" class="snippet-form">
+					<p class="variables-modal-copy">Rellena los valores para generar el texto final antes de copiarlo.</p>
+					<div class="variables-fields" id="variables-fields"></div>
+					<div class="modal-actions">
+						<button type="button" class="btn btn-cancel" id="variables-modal-cancel-btn">Cancelar</button>
+						<button type="submit" class="btn btn-save">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+							Copiar texto
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
 		<!-- Snippet Card HTML Template -->
 		<SnippetCardTemplate />
 	</main>
@@ -296,6 +319,9 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	// ---- View mode (grid / list) ----
+	const VIEW_ICON_GRID = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`;
+	const VIEW_ICON_LIST = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+
 	function loadViewMode() {
 		const saved = localStorage.getItem('clipbox_view_mode');
 		viewMode = saved === 'list' ? 'list' : 'grid';
@@ -307,7 +333,14 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		snippetsContainer.classList.toggle('view-list', viewMode === 'list');
 
 		const btn = document.getElementById('view-toggle-btn');
-		if (btn) btn.classList.toggle('is-list', viewMode === 'list');
+		if (btn) {
+			const isListView = viewMode === 'list';
+			btn.classList.toggle('is-list', isListView);
+			btn.setAttribute('title', isListView ? 'Cambiar a vista de grilla' : 'Cambiar a vista de lista');
+			btn.setAttribute('aria-label', isListView ? 'Cambiar a vista de grilla' : 'Cambiar a vista de lista');
+			const icon = document.getElementById('view-toggle-icon');
+			if (icon) icon.innerHTML = isListView ? VIEW_ICON_GRID : VIEW_ICON_LIST;
+		}
 	}
 
 	function wireViewToggle() {
@@ -453,7 +486,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 			`;
 
-			showToast('Text copied to clipboard!');
+			showToast('Text copied to clipboard!', 'success');
 
 			setTimeout(() => {
 				button.classList.remove('copied');
@@ -462,6 +495,99 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		} catch (err) {
 			showToast('Error to copy text', 'error');
 		}
+	}
+
+	const SNIPPET_VARIABLE_REGEX = /\{\{\s*([^{}]+?)\s*\}\}/g;
+
+	function extractSnippetVariables(text) {
+		const variables = [];
+		const seen = new Set();
+		for (const match of text.matchAll(SNIPPET_VARIABLE_REGEX)) {
+			const name = match[1].trim();
+			if (!name || seen.has(name)) continue;
+			seen.add(name);
+			variables.push(name);
+		}
+		return variables;
+	}
+
+	function resolveSnippetVariables(text, values) {
+		return text.replace(SNIPPET_VARIABLE_REGEX, (_, rawName) => {
+			const name = rawName.trim();
+			return Object.prototype.hasOwnProperty.call(values, name) ? values[name] : '';
+		});
+	}
+
+	const variablesModal = document.getElementById('variables-modal');
+	const variablesForm = document.getElementById('variables-form');
+	const variablesFields = document.getElementById('variables-fields');
+	const variablesModalCloseBtn = document.getElementById('variables-modal-close-btn');
+	const variablesModalCancelBtn = document.getElementById('variables-modal-cancel-btn');
+
+	let pendingCopyButton = null;
+	let pendingCopyText = '';
+
+	function closeVariablesModal() {
+		if (!variablesModal || !variablesFields) return;
+		variablesModal.classList.remove('open');
+		variablesModal.setAttribute('aria-hidden', 'true');
+		variablesFields.innerHTML = '';
+		pendingCopyButton = null;
+		pendingCopyText = '';
+	}
+
+	function openVariablesModal(text, button) {
+		if (!variablesModal || !variablesFields) {
+			copyToClipboard(text, button);
+			return;
+		}
+
+		const variables = extractSnippetVariables(text);
+		if (variables.length === 0) {
+			copyToClipboard(text, button);
+			return;
+		}
+
+		pendingCopyButton = button;
+		pendingCopyText = text;
+		variablesFields.innerHTML = '';
+
+		variables.forEach((name) => {
+			const field = document.createElement('div');
+			field.className = 'form-group variables-field';
+
+			const label = document.createElement('label');
+			label.className = 'variables-label';
+			const inputId = `variable-input-${name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}`;
+			label.setAttribute('for', inputId);
+			label.textContent = name;
+
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.id = inputId;
+			input.name = name;
+			input.className = 'variables-input';
+			input.placeholder = `Valor para ${name}`;
+			input.autocomplete = 'off';
+			input.required = true;
+
+			field.appendChild(label);
+			field.appendChild(input);
+			variablesFields.appendChild(field);
+		});
+
+		variablesModal.classList.add('open');
+		variablesModal.setAttribute('aria-hidden', 'false');
+		setTimeout(() => variablesFields.querySelector('input')?.focus(), 50);
+	}
+
+	async function handleSnippetCopy(text, button) {
+		const variables = extractSnippetVariables(text);
+		if (variables.length === 0) {
+			await copyToClipboard(text, button);
+			return;
+		}
+		openVariablesModal(text, button);
 	}
 
 	// Delete a snippet
@@ -557,7 +683,41 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	document.getElementById('modal-close-btn')?.addEventListener('click', closeEditModal);
 	document.getElementById('modal-cancel-btn')?.addEventListener('click', closeEditModal);
 	editModal?.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
-	document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEditModal(); });
+	variablesModalCloseBtn?.addEventListener('click', closeVariablesModal);
+	variablesModalCancelBtn?.addEventListener('click', closeVariablesModal);
+	variablesModal?.addEventListener('click', (e) => { if (e.target === variablesModal) closeVariablesModal(); });
+	document.addEventListener('keydown', (e) => {
+		if (e.key !== 'Escape') return;
+		if (variablesModal?.classList.contains('open')) {
+			closeVariablesModal();
+			return;
+		}
+		closeEditModal();
+	});
+
+	if (variablesForm) {
+		variablesForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!pendingCopyText || !pendingCopyButton) return;
+
+			const values = {};
+			const formData = new FormData(variablesForm);
+			for (const [key, value] of formData.entries()) {
+				values[key] = String(value).trim();
+			}
+
+			const missingValue = Object.values(values).some(value => value === '');
+			if (missingValue) {
+				showToast('Completa todas las variables antes de copiar', 'error');
+				return;
+			}
+
+			const resolvedText = resolveSnippetVariables(pendingCopyText, values);
+			const button = pendingCopyButton;
+			closeVariablesModal();
+			await copyToClipboard(resolvedText, button);
+		});
+	}
 
 	if (editForm) {
 		editForm.addEventListener('submit', (e) => {
@@ -733,7 +893,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		// Add event listener to copy button
 		const copyBtn = clone.querySelector('.copy-btn');
 		if (copyBtn) {
-			copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
+			copyBtn.addEventListener('click', () => handleSnippetCopy(snippet.text, copyBtn));
 		}
 
 		// Show open-link button only for link snippets
@@ -978,6 +1138,10 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		transform: translateY(0) scale(1);
 	}
 
+	.modal-box-compact {
+		max-width: 460px;
+	}
+
 	.modal-header {
 		display: flex;
 		align-items: center;
@@ -1029,6 +1193,59 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--text-muted);
+	}
+
+	.variables-modal-copy {
+		margin: -0.25rem 0 0;
+		color: var(--text-muted);
+		font-size: 0.92rem;
+		line-height: 1.5;
+	}
+
+	.variables-fields {
+		display: grid;
+		gap: 1rem;
+	}
+
+	:global(#variables-modal .variables-field) {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	:global(#variables-modal .variables-label) {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	:global(#variables-modal .variables-input) {
+		appearance: none;
+		-webkit-appearance: none;
+		width: 100%;
+		box-sizing: border-box;
+		background: var(--bg-input);
+		border: 1px solid var(--border-color);
+		border-radius: 10px;
+		color: var(--text-primary);
+		padding: 0.875rem;
+		font-family: inherit;
+		font-size: 0.95rem;
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
+	}
+
+	:global(#variables-modal .variables-input::placeholder) {
+		color: var(--text-muted);
+		opacity: 1;
+	}
+
+	:global(#variables-modal .variables-input:focus) {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 	}
 
 	.modal-box .form-group textarea,

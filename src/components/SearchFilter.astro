@@ -28,11 +28,10 @@ import categories from '../data/categories.json';
 					</button>
 
 					<!-- View toggle -->
-					<button type="button" id="view-toggle-btn" class="view-toggle-btn" title="Switch view" aria-label="Toggle grid/list view">
-						<!-- Grid icon (active in grid mode) -->
-						<svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-						<!-- List icon (active in list mode) -->
-						<svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+					<button type="button" id="view-toggle-btn" class="view-toggle-btn" title="Cambiar a vista de lista" aria-label="Cambiar a vista de lista">
+						<span id="view-toggle-icon" class="view-toggle-icon" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+						</span>
 					</button>
 				</div>
 				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
@@ -71,6 +70,10 @@ import categories from '../data/categories.json';
 </div>
 
 <style>
+  .search-filter-container {
+    --search-filter-button-height: 2.5rem;
+  }
+
   .sort-controls {
     display: flex;
     align-items: center;
@@ -80,11 +83,11 @@ import categories from '../data/categories.json';
 
   /* View toggle button */
   .view-toggle-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: var(--search-filter-button-height);
+    height: var(--search-filter-button-height);
     background: var(--bg-hover);
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -106,21 +109,33 @@ import categories from '../data/categories.json';
     color: #a5b4fc;
   }
 
-  /* Show grid icon by default, list icon when active */
-  .view-toggle-btn .icon-list { display: none; }
-  .view-toggle-btn .icon-grid { display: block; }
+  .view-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    line-height: 0;
+  }
 
-  .view-toggle-btn.is-list .icon-list { display: block; }
-  .view-toggle-btn.is-list .icon-grid { display: none; }
+  .view-toggle-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
 
   .sort-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.65rem;
     background: rgba(99, 102, 241, 0.08);
     border: 1px solid rgba(99, 102, 241, 0.22);
     color: var(--text-secondary);
-    padding: 0.55rem 0.9rem 0.55rem 0.7rem;
+    min-height: var(--search-filter-button-height);
+    padding: 0.4rem 0.9rem 0.4rem 0.7rem;
     border-radius: 12px;
     cursor: pointer;
     font-family: inherit;
@@ -193,7 +208,8 @@ import categories from '../data/categories.json';
 
   .source-picker-wrapper .sort-btn {
     flex-shrink: 0;
-    padding: 0.55rem 0.9rem 0.55rem 0.7rem;
+    min-height: var(--search-filter-button-height);
+    padding: 0.4rem 0.9rem 0.4rem 0.7rem;
     font-size: inherit;
   }
 
@@ -275,12 +291,16 @@ import categories from '../data/categories.json';
 	}
 
 	.source-picker-wrapper button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
+		min-height: var(--search-filter-button-height);
 		background: var(--bg-hover);
 		border: 1px solid var(--border-color);
 		border-radius: 12px;
 		color: var(--text-primary);
-		padding: 0.85rem 1rem;
+		padding: 0.4rem 1rem;
 		font-size: 0.95rem;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -307,10 +327,14 @@ import categories from '../data/categories.json';
 	}
 
 	.filter-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		background: var(--bg-hover);
 		border: 1px solid var(--border-color);
 		color: var(--text-muted);
-		padding: 0.5rem 1rem;
+		min-height: var(--search-filter-button-height);
+		padding: 0.35rem 1rem;
 		border-radius: 15px;
 		font-size: 0.65rem;
 		font-weight: 500;
