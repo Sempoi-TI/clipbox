@@ -37,6 +37,7 @@
 		padding: 1.25rem;
 		min-height: 50px;
 		background: var(--bg-card);
+		border-radius: 16px;
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 		transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, border-color 0.2s, background 0.3s;
 	}
@@ -159,4 +160,91 @@
 	}
 
 	.tag-chip::before { content: '#'; opacity: 0.55; font-size: 0.58rem; }
+
+	/* ── List view ── */
+	/* Applied when #snippets-container has .view-list */
+
+	.view-list .snippet-card,
+	.view-list .pinned-grid .snippet-card {
+		flex-direction: row;
+		align-items: center;
+		padding: 0.6rem 1rem;
+		min-height: unset;
+		gap: 0.75rem;
+	}
+
+	.view-list .snippet-card:hover {
+		transform: none;
+	}
+
+	/* Badge — fixed width, no shrink */
+	.view-list .category-badge {
+		flex-shrink: 0;
+		width: 80px;
+		text-align: center;
+		font-size: 0.65rem;
+	}
+
+	/* Card body takes all remaining space, single line */
+	.view-list .card-body {
+		flex: 1 1 0;
+		min-width: 0;
+		margin-bottom: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		overflow: hidden;
+	}
+
+	/* Hide description in list mode — text is enough */
+	.view-list .snippet-description { display: none !important; }
+
+	/* Single-line truncated text */
+	.view-list .snippet-content {
+		flex: 1 1 0;
+		min-width: 0;
+		max-height: unset;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-size: 0.82rem;
+	}
+
+	/* Tags inline, no wrap, scrollable */
+	.view-list .snippet-tags {
+		flex-shrink: 0;
+		flex-wrap: nowrap;
+		overflow: hidden;
+		max-width: 180px;
+		margin-top: 0;
+		padding-top: 0;
+		border-top: none;
+		gap: 0.3rem;
+	}
+
+	/* Card header becomes a fixed-width actions bar */
+	.view-list .card-header {
+		flex-shrink: 0;
+		margin-bottom: 0;
+		order: 1; /* move actions to the right */
+	}
+
+	/* Hide the badge from card-header — shown separately */
+	.view-list .card-header .category-badge { display: none; }
+
+	/* Re-order: badge | body | actions */
+	.view-list .snippet-card { flex-direction: row; }
+
+	/* Pinned section in list view */
+	.view-list .pinned-grid {
+		grid-template-columns: 1fr;
+		gap: 0.4rem;
+	}
+
+	/* Container switches from grid to single column */
+	.snippets-container-inner.view-list,
+	#snippets-container.view-list {
+		grid-template-columns: 1fr;
+		gap: 0.4rem;
+	}
 </style>

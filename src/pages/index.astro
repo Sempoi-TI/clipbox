@@ -101,6 +101,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	let currentFilter = 'all';
 	let searchQuery = '';
 	let pinnedIds = new Set(); // IDs of pinned snippets (persisted separately)
+	let viewMode = 'grid'; // 'grid' | 'list'
 	let currentTags= []; // tags being built in the form
 
 	// DOM Elements
@@ -294,6 +295,31 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		renderSnippets();
 	}
 
+	// ---- View mode (grid / list) ----
+	function loadViewMode() {
+		const saved = localStorage.getItem('clipbox_view_mode');
+		viewMode = saved === 'list' ? 'list' : 'grid';
+		applyViewMode();
+	}
+
+	function applyViewMode() {
+		if (!snippetsContainer) return;
+		snippetsContainer.classList.toggle('view-list', viewMode === 'list');
+
+		const btn = document.getElementById('view-toggle-btn');
+		if (btn) btn.classList.toggle('is-list', viewMode === 'list');
+	}
+
+	function wireViewToggle() {
+		const btn = document.getElementById('view-toggle-btn');
+		if (!btn) return;
+		btn.addEventListener('click', () => {
+			viewMode = viewMode === 'grid' ? 'list' : 'grid';
+			localStorage.setItem('clipbox_view_mode', viewMode);
+			applyViewMode();
+		});
+	}
+
 	async function loadSnippetsFromMetadata() {
 		const metadata = localStorage.getItem(getDatasetMetadataKey());
 		if (!metadata) {
@@ -372,9 +398,11 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	async function init() {
 		initDomElements();
 		loadPins();
+		loadViewMode();
 		await loadSnippetsFromMetadata();
 		wireDatasetFileChooser();
 		wireExportButton();
+		wireViewToggle();
 		renderSnippets();
 	}
 

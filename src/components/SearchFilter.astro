@@ -26,6 +26,14 @@ import categories from '../data/categories.json';
 							<span id="sort-order-text" class="sort-btn-value">Descendente</span>
 						</span>
 					</button>
+
+					<!-- View toggle -->
+					<button type="button" id="view-toggle-btn" class="view-toggle-btn" title="Switch view" aria-label="Toggle grid/list view">
+						<!-- Grid icon (active in grid mode) -->
+						<svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+						<!-- List icon (active in list mode) -->
+						<svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+					</button>
 				</div>
 				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
 			</div>
@@ -65,8 +73,45 @@ import categories from '../data/categories.json';
 <style>
   .sort-controls {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-left: auto;
   }
+
+  /* View toggle button */
+  .view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .view-toggle-btn:hover {
+    background: var(--bg-card);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .view-toggle-btn.is-list {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.35);
+    color: #a5b4fc;
+  }
+
+  /* Show grid icon by default, list icon when active */
+  .view-toggle-btn .icon-list { display: none; }
+  .view-toggle-btn .icon-grid { display: block; }
+
+  .view-toggle-btn.is-list .icon-list { display: block; }
+  .view-toggle-btn.is-list .icon-grid { display: none; }
 
   .sort-btn {
     display: inline-flex;
