@@ -1,16 +1,503 @@
 [
   {
-    "id": 1,
-    "text": "¡Hola! APTI",
-    "description": "Welcome message",
-    "tags": ["welcome", "intro"],
-    "category": "All"
+    "id": 51,
+    "text": "https://itopcalendar.lima.bcp.com.pe/login",
+    "description": "Calendario Cha-Ma",
+    "category": "Link"
+  },
+  {
+    "id": 50,
+    "text": "openapi-builder",
+    "description": "Iniciar Apifactory[openapi]",
+    "tags": [
+      "openapi"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 49,
+    "text": "npm install -g @apifactory/openapi-builder",
+    "description": "Instalar apifactory[openapi]",
+    "tags": [
+      "openapi"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 48,
+    "text": "npm uninstall -g @apifactory/openapi-builder",
+    "description": "Desinstalar apifactory[openapi]",
+    "tags": [
+      "openapi"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 47,
+    "text": "Compórtate como un Product Owner experto con 10 años de experiencia, utiliza el alcance descrito en la sección ENTRADA donde se describe el usuario, necesidad y un conjunto de Validaciones y Reglas de Negocio para crear una Historia de Usuario completa, incluyendo el título de la issue, descripción en formato Connextra (COMO, QUIERO, PARA) y criterios de aceptación en formato Gherkin DSL (DADO, CUANDO, ENTONCES), todo debe tener relación clara con las necesidades del usuario final.\n\nENTRADA:\n\n1. USUARIO (Rol que demanda la Necesidad):\nComo integrante de APTI\n\n2. NECESIDAD DEL USUARIO (Problema a resolver o valor a capturar):\n<Describe la necesidad del usuario, incluye lo que se debe realizar, elementos, servicios, SP, Job y todo lo que sea necesario y hayas encontrado en tu análisis. Si la actividad es de análisis incluye lo que esperas obtener o encontrar>\nImplementar un módulo de reposición de tarjetas de crédito\n\n3. VALIDACIONES Y/O REGLAS DE NEGOCIO:\nA continuación indico las validaciones y reglas de negocio que describe una funcionalidad o el trabajo a realizar:\n<Describe las validaciones a tomar en cuenta y reglas que se deben cumplir>\n- La reposición de tarjetas de crédito aplica solo a los bloqueos por robo y/o pérdida. Se excluye reposición de otro tipo de bloqueo.\n- La reposición de tarjeta de crédito incluye el recojo de la nueva tarjeta en oficina.\n- Aplica solo para tarjetas de crédito VISA.\n\n4. FUERA DE ALCANCE(Opcional):\nSi esta sección queda vacía, determina los elementos fuera de alcance basándote en las Validaciones y Reglas de Negocio:\nIndicar que no está habilitada la reposición con entrega en domicilio.\n\n\nSALIDA ESPERADA:\nEstructura la respuesta esperada con los elementos de una Historia de Usuario en español:\n1. HISTORIA DE USUARIO:\n1.1 TITULO DEL ISSUE:\nEl título debe cumplir con los siguientes criterios:\nContener mínimo 20 caracteres, excluyendo espacios y saltos de línea.\nIniciar con al menos un verbo en infinitivo que describa la acción principal.\nSer claro, conciso y representativo del objetivo de la historia.\n1.2 DESCRIPCION DE LA HISTORIA DE USUARIO:\nLa descripción en formato Connextra (COMO, QUIERO, PARA), estructurada de la siguiente manera:\nFORMATO: \nComo [rol del usuario que solicita], \nQuiero [necesidad del usuario], \nPara [beneficio que es lo que espera lograr].\nDebe tener mínimo 160 caracteres, excluyendo espacios, caracteres especiales y saltos de línea. Incluir al menos un verbo en infinitivo que represente la acción deseada. Ser específica, orientada al valor y comprensible para todos los stakeholders.\n1.3 CRITERIOS DE ACEPTACIÓN:\nCada criterio de aceptación debe reflejar una regla de negocio o validación y cumplir con lo siguiente:\nDebe tener una relación clara con las necesidad del usuario final.\nSe debe crear como mínimo 4 criterios de aceptación.\nUsar el formato Gherkin DSL con la estructura DADO, CUANDO, ENTONCES:\nDado [condición del escenario]\nCuando [acción]\nEntonces [resultado esperado] \nCada criterio debe tener un título descriptivo, iniciando con el prefijo: \"Criterio de aceptación X: Y\", donde \"X\" representa un número correlativo que inicia en 1, y \"Y\" corresponde al título descriptivo del criterio de aceptación iniciando con Happy Path o Unhappy Path, según aplique.\nCada criterio debe tener mínimo 100 caracteres, excluyendo espacios y saltos de línea.\nLos criterios deben incluir escenarios Happy Path y/o Unhappy Path cuando aplique, para cubrir tanto casos exitosos como excepciones o errores.\nFinaliza agregando las siguiente sugerencias para la gestión en Jira, márcalas con íconos resaltantes:\n- No olvides marcar el campo DEUDA TECNICA en la pestaña DETALLES, con Si o No\n- No olvides marcar los dos check en ENTENDIMIENTO Y DEPENDENCIA en el la pestaña PLANIFICACIÓN\n- Alerta, cuando veas que el campo CALIDAD DE ISSUE, esté en Color Verde, en el campo ETIQUETAS, agrega las etiquetas: BDD y DOR",
+    "description": "Prompt para crear HU",
+    "tags": [
+      "ia"
+    ],
+    "category": "Notes"
+  },
+  {
+    "id": 46,
+    "text": "haz los test siguiendo los siguietnes lineamientos:\n\n- los test no deben contener logica\n- todos los nombres de los tests deben estar en ingles\n- todos los test deben tener displayName\n- todos los test deben seguir el patron AAA\n- cada test debe probar 1 solo escenario o de lo contrario deben ser parametrizados o separados en 2 o mas tests\n- el nombre de cada test debe empezar por un verbo y dentro del nombre contener la palabra when y ser en formato camelCase\n- En el displayName se debe utilizar el mismo nombre del método pero con la única diferencia que cada palabra del texto del DisplayName va separada por espacios (Se empieza con Mayúscula). Todo método de prueba debe contar con esta anotación.",
+    "description": "Prompt para hacer Test-Unitarios",
+    "tags": [
+      "ia"
+    ],
+    "category": "Notes"
+  },
+  {
+    "id": 45,
+    "text": "net user T61117 /domain | findstr TTIB",
+    "description": "Ver grupos de red por matricula",
+    "tags": [
+      "red"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 44,
+    "text": "mvn archetype:generate -DarchetypeGroupId=com.bcp.atlas.archetype -DarchetypeArtifactId=server-cnf -DarchetypeVersion=1.0.1-SNAPSHOT -DgroupId=com.pe.bcp -DartifactId=business-ach-operation-information -Dversion=1.0.0-SNAPSHOT -DinteractiveMode=false",
+    "description": "Generar proyecto con CNF",
+    "tags": [
+      "java"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 43,
+    "text": "powershell.exe -executionpolicy bypass -File kafka-local-server.ps1",
+    "description": "Iniciar Confluent Cloud",
+    "tags": [
+      "kafka"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 42,
+    "text": "mvn clean test-compile spotbugs:spotbugs spotbugs:check",
+    "description": "Generar reporte Sportbugs",
+    "tags": [
+      "java"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 41,
+    "text": "mvn quarkus:dev \"-Dquarkus.profile=local\"",
+    "description": "Iniciar app quarkus con perfil local",
+    "tags": [
+      "java"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 40,
+    "text": "mvn generate-sources",
+    "description": "Generar archivos con plugins",
+    "tags": [
+      "java"
+    ],
+    "category": "Code"
+  },
+  {
+    "id": 39,
+    "text": "kubectl rollout restart deploy business-ach-operations-information-profile-v2",
+    "description": "Reiniciar aplicacion",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 38,
+    "text": "curl -v http://localhost:18080/operation-redis/v1/q/health/ready",
+    "description": "Ejecutar curl dentro del pod",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 37,
+    "text": "kubectl exec -it <nombre-pod> -- /bin/bash",
+    "description": "Ingresar al bash del pod",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 36,
+    "text": "kubectl logs -f <nombre-del-pod>",
+    "description": "Ver logs en tiempo real por componente",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 35,
+    "text": "download retry.log",
+    "description": "Descargar logs de un archivo previamente guardado",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 34,
+    "text": "kubectl logs business-ach-operations-notification-v1-8447c54bd-8mvcc > retry.log",
+    "description": "Guardar logs en un Archivo",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 33,
+    "text": "kubectl get pods",
+    "description": "Listar pods",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 32,
+    "text": "kubectl config set-context --current --namespace=apti",
+    "description": "Establecer un namespace por defecto",
+    "tags": [
+      "comando"
+    ],
+    "category": "Aks"
+  },
+  {
+    "id": 31,
+    "text": "maxli@bcp.com.pe/925211338",
+    "description": "Correo Qe Max Li",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Qes"
+  },
+  {
+    "id": 30,
+    "text": "kenyoli@bcp.com.pe/967586320",
+    "description": "Correo Qe Kenyo Li",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Qes"
+  },
+  {
+    "id": 29,
+    "text": "juliovzurita@bcp.com.pe/940163199",
+    "description": "Correo Qe Julio Zurita",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Qes"
+  },
+  {
+    "id": 28,
+    "text": "pacosta@bcp.com.pe",
+    "description": "Correo Dev Pedro Acosta",
+    "tags": [
+      "email",
+      "devops",
+      "dev"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 27,
+    "text": "larryvalderrama@bcp.com.pe/931839400",
+    "description": "Correo Dev Larry Valderrame",
+    "tags": [
+      "email",
+      "dev",
+      "java"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 26,
+    "text": "hermesguerrad@bcp.com.pe/984199608",
+    "description": "Correo Dev Hermes Guerra",
+    "tags": [
+      "email",
+      "dev",
+      "java"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 25,
+    "text": "alexanderhuerta@bcp.com.pe/960077609",
+    "description": "Correo Dev Alexander Huerta",
+    "tags": [
+      "email",
+      "dev",
+      "java"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 24,
+    "text": "alexissalgado@bcp.com.pe/952416223",
+    "description": "Correo Dev Alexis Salgado",
+    "tags": [
+      "email",
+      "dev",
+      "java"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 23,
+    "text": "nestornunez@bcp.com.pe/942796835",
+    "description": "Correo Dev Nestor Marinovich",
+    "tags": [
+      "email",
+      "dev",
+      "java"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 22,
+    "text": "reydajhong@bcp.com.pe",
+    "description": "Correo PM Reyda Jhong",
+    "tags": [
+      "email",
+      "pm"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 21,
+    "text": "yulianaalvarez@bcp.com.pe",
+    "description": "Correo Qe Yuliana Alvarez",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 20,
+    "text": "wilfredoquintanilla@bcp.com.pe",
+    "description": "Correo PM Wilfredo Quintanilla",
+    "tags": [
+      "email",
+      "bcp"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 19,
+    "text": "wquintan@kyndryl.com",
+    "description": "Correo PM Wilfredo Quintanilla",
+    "tags": [
+      "email",
+      "kyndryl"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 18,
+    "text": "dithergary.zamora@kyndryl.com",
+    "description": "Correo Manager Dither Zamora",
+    "tags": [
+      "email",
+      "kyndryl"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 17,
+    "text": "marcio.gallardo@kyndryl.com",
+    "description": "Correo Dev Marcio Gallardo",
+    "tags": [
+      "email",
+      "dev",
+      "kyndryl"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 16,
+    "text": "isabeldelcarmen.valera@kyndryl.com",
+    "description": "Correo Dev Isabel Valera",
+    "tags": [
+      "email",
+      "dev",
+      "kyndryl"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 15,
+    "text": "erik.roky.shupingahua@kyndryl.com",
+    "description": "Correo Dev Erik Shupingahua",
+    "tags": [
+      "email",
+      "dev",
+      "kyndryl",
+      "devops"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 14,
+    "text": "erikshupingahua@bcp.com.pe/951767190",
+    "description": "Correo Dev Erik Shupingahua",
+    "tags": [
+      "email",
+      "dev",
+      "devops"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 13,
+    "text": "gerardogallardo@bcp.com.pe",
+    "description": "Correo Dev Marcio",
+    "tags": [
+      "email",
+      "dev"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 12,
+    "text": "hectormalpica@bcp.com.pe",
+    "description": "Correo Dev Hector Malpica",
+    "tags": [
+      "email",
+      "dev",
+      "arquitecto"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 11,
+    "text": "josefcorrales@bcp.com.pe/965196259",
+    "description": "Correo Qe Jose Corrales",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Qes"
+  },
+  {
+    "id": 10,
+    "text": "flormflores@bcp.com.pe/992301911",
+    "description": "Correo Qe Fatima Flores",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Qes"
+  },
+  {
+    "id": 9,
+    "text": "isabelvalera@bcp.com.pe/996063657",
+    "description": "Correo Dev Isabel Valera",
+    "tags": [
+      "email",
+      "dev",
+      "mainframe"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 8,
+    "text": "paulovideira@bcp.com.pe/998931436",
+    "description": "Correo Dev Paulo Videira",
+    "tags": [
+      "email",
+      "dev",
+      "mainframe"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 7,
+    "text": "dchang@bcp.com.pe",
+    "description": "Correo CL_DEV Daniel Chang",
+    "tags": [
+      "email",
+      "dev"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 6,
+    "text": "adasolis@bcp.com.pe",
+    "description": "Correo CL_QE Ada Solis",
+    "tags": [
+      "email",
+      "qe"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 5,
+    "text": "sandraita@bcp.com.pe",
+    "description": "Correo AS Sandra Ita",
+    "tags": [
+      "email",
+      "as"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 4,
+    "text": "rennyrodriguez@bcp.com.pe",
+    "description": "Correo LT Renny Rodriguez",
+    "tags": [
+      "email",
+      "lt"
+    ],
+    "category": "Core"
+  },
+  {
+    "id": 3,
+    "text": "edgardalva@bcp.com.pe",
+    "description": "Correo LT Edgard Alva",
+    "tags": [
+      "email",
+      "lt"
+    ],
+    "category": "Core"
   },
   {
     "id": 2,
-    "text": "git APTI",
-    "description": "Git commit template APTI",
-    "tags": ["git", "commit"],
-    "category": "Code"
+    "text": "eligtarazona@bcp.com.pe/941093572",
+    "description": "Mi correo/numero",
+    "tags": [
+      "email",
+      "correo"
+    ],
+    "category": "Devs"
+  },
+  {
+    "id": 1,
+    "text": "eligtarazona@bcp.com.pe",
+    "description": "Mi correo",
+    "tags": [
+      "email",
+      "correo"
+    ],
+    "category": "Devs"
   }
 ]

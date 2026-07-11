@@ -100,6 +100,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	let snippets= [];
 	let currentFilter = 'all';
 	let searchQuery = '';
+	let pinnedIds = new Set(); // IDs of pinned snippets (persisted separately)
 	let currentTags= []; // tags being built in the form
 
 	// DOM Elements
@@ -269,6 +270,30 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		saveDatasetMetadata();
 	}
 
+	// ---- Pin persistence (independent of dataset) ----
+	function loadPins() {
+		try {
+			const raw = localStorage.getItem('clipbox_pinned_ids');
+			if (raw) pinnedIds = new Set(JSON.parse(raw));
+		} catch { pinnedIds = new Set(); }
+	}
+
+	function savePins() {
+		localStorage.setItem('clipbox_pinned_ids', JSON.stringify([...pinnedIds]));
+	}
+
+	function togglePin(id) {
+		if (pinnedIds.has(id)) {
+			pinnedIds.delete(id);
+			showToast('Snippet unpinned', 'info');
+		} else {
+			pinnedIds.add(id);
+			showToast('Snippet pinned!', 'success');
+		}
+		savePins();
+		renderSnippets();
+	}
+
 	async function loadSnippetsFromMetadata() {
 		const metadata = localStorage.getItem(getDatasetMetadataKey());
 		if (!metadata) {
@@ -346,6 +371,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	async function init() {
 		initDomElements();
+		loadPins();
 		await loadSnippetsFromMetadata();
 		wireDatasetFileChooser();
 		wireExportButton();
@@ -606,79 +632,114 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 		snippetsContainer.innerHTML = '';
 
-		filtered.forEach(snippet => {
-			const badge = getCategoryBadge(snippet.category);
-			
-			// Clone the card from the template element
-			const clone = document.importNode(template.content, true);
-			
-			// Set badge info
-			const badgeEl = clone.querySelector('.category-badge');
-			if (badgeEl) {
-				badgeEl.textContent = badge.label;
-				badgeEl.className = `category-badge ${badge.class}`;
-			}
+		// Split into pinned and rest
+		const pinned = filtered.filter(s => pinnedIds.has(s.id));
+		const rest    = filtered.filter(s => !pinnedIds.has(s.id));
 
-			// Set description
-			const descEl = clone.querySelector('.snippet-description');
-			if (descEl) {
-				if (snippet.description) {
-					descEl.textContent = snippet.description;
-					descEl.style.display = 'block';
-				} else {
-					descEl.style.display = 'none';
-				}
-			}
+		// Render pinned section
+		if (pinned.length > 0) {
+			const section = document.createElement('div');
+			section.className = 'pinned-section';
+			section.innerHTML = `<div class="pinned-section-header">
+				<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+				<span>Pinned</span>
+			</div>
+			<div class="pinned-grid"></div>`;
+			const grid = section.querySelector('.pinned-grid');
+			pinned.forEach(s => grid.appendChild(buildCard(s)));
+			snippetsContainer.appendChild(section);
+		}
 
-			// Set text content
-			const codeEl = clone.querySelector('code');
-			if (codeEl) {
-				codeEl.textContent = snippet.text;
-			}
-
-			// Set tags
-			const tagsEl = clone.querySelector('.snippet-tags');
-			if (tagsEl && snippet.tags && snippet.tags.length > 0) {
-				snippet.tags.forEach(tag => {
-					const chip = document.createElement('span');
-					chip.className = 'tag-chip';
-					chip.textContent = tag;
-					tagsEl.appendChild(chip);
-				});
-			}
-
-			// Add event listener to copy button
-			const copyBtn = clone.querySelector('.copy-btn');
-			if (copyBtn) {
-				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
-			}
-
-			// Show open-link button only for link snippets
-			const openLinkBtn = clone.querySelector('.open-link-btn');
-			if (openLinkBtn) {
-				const url = getSnippetUrl(snippet.text);
-				if (isSnippetLink(snippet) && url) {
-					openLinkBtn.href = url;
-					openLinkBtn.hidden = false;
-				} else {
-					openLinkBtn.hidden = true;
-				}
-			}
-
-			// Add event listener to edit button
-			const editBtn = clone.querySelector('.edit-btn');
-			if (editBtn) {
-				editBtn.addEventListener('click', () => openEditModal(snippet.id));
-			}
-
-			// Add event listener to delete button
-			const deleteBtn = clone.querySelector('.delete-btn');
-			if (deleteBtn) {
-				deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
-			}
-
-			snippetsContainer.appendChild(clone);
+		// Render the rest
+		rest.forEach(snippet => {
+			snippetsContainer.appendChild(buildCard(snippet));
 		});
+	}
+
+	function buildCard(snippet) {
+		const badge = getCategoryBadge(snippet.category);
+		const isPinned = pinnedIds.has(snippet.id);
+		
+		// Clone the card from the template element
+		const clone = document.importNode(template.content, true);
+		const card = clone.querySelector('.snippet-card');
+
+		if (isPinned && card) card.classList.add('is-pinned');
+		
+		// Set badge info
+		const badgeEl = clone.querySelector('.category-badge');
+		if (badgeEl) {
+			badgeEl.textContent = badge.label;
+			badgeEl.className = `category-badge ${badge.class}`;
+		}
+
+		// Set description
+		const descEl = clone.querySelector('.snippet-description');
+		if (descEl) {
+			if (snippet.description) {
+				descEl.textContent = snippet.description;
+				descEl.style.display = 'block';
+			} else {
+				descEl.style.display = 'none';
+			}
+		}
+
+		// Set text content
+		const codeEl = clone.querySelector('code');
+		if (codeEl) {
+			codeEl.textContent = snippet.text;
+		}
+
+		// Set tags
+		const tagsEl = clone.querySelector('.snippet-tags');
+		if (tagsEl && snippet.tags && snippet.tags.length > 0) {
+			snippet.tags.forEach(tag => {
+				const chip = document.createElement('span');
+				chip.className = 'tag-chip';
+				chip.textContent = tag;
+				tagsEl.appendChild(chip);
+			});
+		}
+
+		// Pin button
+		const pinBtn = clone.querySelector('.pin-btn');
+		if (pinBtn) {
+			if (isPinned) pinBtn.classList.add('pinned');
+			pinBtn.title = isPinned ? 'Unpin snippet' : 'Pin snippet';
+			pinBtn.addEventListener('click', () => togglePin(snippet.id));
+		}
+
+		// Add event listener to copy button
+		const copyBtn = clone.querySelector('.copy-btn');
+		if (copyBtn) {
+			copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
+		}
+
+		// Show open-link button only for link snippets
+		const openLinkBtn = clone.querySelector('.open-link-btn');
+		if (openLinkBtn) {
+			const url = getSnippetUrl(snippet.text);
+			if (isSnippetLink(snippet) && url) {
+				openLinkBtn.href = url;
+				openLinkBtn.hidden = false;
+			} else {
+				openLinkBtn.hidden = true;
+			}
+		}
+
+		// Add event listener to edit button
+		const editBtn = clone.querySelector('.edit-btn');
+		if (editBtn) {
+			editBtn.addEventListener('click', () => openEditModal(snippet.id));
+		}
+
+		// Add event listener to delete button
+		const deleteBtn = clone.querySelector('.delete-btn');
+		if (deleteBtn) {
+			deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
+		}
+
+		return clone;
 	}
 
   // Get next numeric ID
@@ -797,6 +858,33 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	/* Snippets Grid */
 	.snippets-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 1.25rem;
+	}
+
+	/* Pinned section */
+	.pinned-section {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.pinned-section-header {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #fbbf24;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+	}
+
+	.pinned-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: 1.25rem;
