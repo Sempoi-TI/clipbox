@@ -1,5 +1,6 @@
 ---
 import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
+import DesktopTitleBar from '../components/DesktopTitleBar.astro';
 ---
 
 <!doctype html>
@@ -26,7 +27,12 @@ import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 	</head>
 	<body>
-		<slot />
+		<div class="desktop-window-shell">
+			<DesktopTitleBar />
+			<div class="desktop-window-content">
+				<slot />
+			</div>
+		</div>
 	</body>
 </html>
 
@@ -58,6 +64,14 @@ import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
 		--primary:        #6366f1;
 		--primary-hover:  #4f46e5;
 		--primary-glow:   rgba(99, 102, 241, 0.3);
+		--desktop-titlebar-height: 56px;
+		--desktop-window-gap: 12px;
+		--desktop-window-radius: 24px;
+		--desktop-window-border: rgba(255, 255, 255, 0.08);
+		--desktop-window-shadow: 0 26px 60px rgba(0, 0, 0, 0.38);
+		--desktop-window-bg: color-mix(in srgb, var(--bg-card-solid) 86%, transparent);
+		--desktop-window-top-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 120px);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.18);
 		--font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 		--font-title: 'Plus Jakarta Sans', var(--font-sans);
 	}
@@ -89,6 +103,11 @@ import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
 		--primary:        #6366f1;
 		--primary-hover:  #4f46e5;
 		--primary-glow:   rgba(99, 102, 241, 0.2);
+		--desktop-window-border: rgba(99, 102, 241, 0.16);
+		--desktop-window-shadow: 0 24px 54px rgba(99, 102, 241, 0.12), 0 16px 34px rgba(15, 23, 42, 0.1);
+		--desktop-window-bg: color-mix(in srgb, var(--bg-card-solid) 90%, transparent);
+		--desktop-window-top-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0) 120px);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.16);
 	}
 
 	html, body {
@@ -103,6 +122,239 @@ import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		transition: background 0.3s, color 0.3s;
+	}
+
+	body {
+		box-sizing: border-box;
+	}
+
+	:global(html.runtime-tauri body) {
+		padding: var(--desktop-window-gap);
+		min-height: 100vh;
+		overflow: hidden;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) {
+		--desktop-window-gap: 0px;
+		--desktop-window-radius: 14px;
+		--desktop-window-border: rgba(255, 255, 255, 0.04);
+		--desktop-window-shadow: none;
+		--desktop-window-active-ring: rgba(255, 255, 255, 0.06);
+		--desktop-titlebar-height: 52px;
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) {
+		--desktop-window-border: rgba(99, 102, 241, 0.08);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.08);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='windows']) {
+		--desktop-window-gap: 10px;
+		--desktop-window-radius: 22px;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='linux']) {
+		--desktop-window-gap: 10px;
+		--desktop-window-radius: 18px;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true'] body) {
+		padding: 0;
+	}
+
+	.desktop-window-shell {
+		min-height: 100vh;
+		position: relative;
+	}
+
+	.desktop-window-content {
+		min-height: 0;
+		position: relative;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell {
+		min-height: calc(100vh - (var(--desktop-window-gap) * 2));
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		border-radius: var(--desktop-window-radius);
+		border: 1px solid var(--desktop-window-border);
+		background: var(--desktop-window-bg);
+		box-shadow: var(--desktop-window-shadow);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		transition:
+			border-radius 240ms ease,
+			box-shadow 240ms ease,
+			border-color 220ms ease,
+			transform 220ms ease,
+			opacity 180ms ease;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell {
+		min-height: 100vh;
+		border: none;
+		box-shadow: none;
+		background: color-mix(in srgb, var(--bg-card-solid) 97%, transparent);
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell {
+		background: color-mix(in srgb, #ffffff 99%, transparent);
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::before,
+	:global(html.runtime-tauri) .desktop-window-shell::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		border-radius: inherit;
+		transition: opacity 220ms ease, transform 220ms ease;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::before {
+		border: 1px solid transparent;
+		opacity: 0;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.05),
+			0 0 0 1px var(--desktop-window-active-ring);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell::before,
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell::after {
+		opacity: 0;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::after {
+		background:
+			radial-gradient(circle at top center, color-mix(in srgb, var(--primary) 14%, transparent), transparent 56%),
+			linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+			linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), transparent 42%);
+		opacity: 0.8;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-content {
+		flex: 1;
+		min-height: 0;
+		overflow: auto;
+		background:
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 5%, transparent), transparent 100px);
+		transition: background 220ms ease, opacity 180ms ease;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 78px),
+			var(--desktop-window-top-highlight);
+	}
+
+	:global(html.runtime-tauri) .desktop-window-content::before {
+		content: '';
+		position: sticky;
+		top: 0;
+		display: block;
+		height: 1px;
+		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 26%, var(--border-color)), transparent);
+		opacity: 0.6;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-content::before {
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.075), transparent);
+		opacity: 0.45;
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) .desktop-window-content::before {
+		background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+		opacity: 0.38;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell {
+		min-height: 100vh;
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-window-shell {
+		border-color: color-mix(in srgb, var(--primary) 18%, var(--desktop-window-border));
+		transform: translateY(-1px);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-focused='true']) .desktop-window-shell {
+		transform: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-window-shell::before {
+		opacity: 1;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-shell {
+		opacity: 0.985;
+		transform: none;
+		box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-focused='false']) .desktop-window-shell {
+		box-shadow: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-shell::after {
+		opacity: 0.45;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-content {
+		opacity: 0.97;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell {
+		background: color-mix(in srgb, var(--bg-card-solid) 92%, transparent);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-maximized='false']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 72px),
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 92px);
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos'][data-window-maximized='false']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 78px),
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, rgba(99, 102, 241, 0.035), transparent 96px);
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell::before,
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell::after {
+		border-radius: 0;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(html.runtime-tauri) .desktop-window-shell,
+		:global(html.runtime-tauri) .desktop-window-shell::before,
+		:global(html.runtime-tauri) .desktop-window-shell::after,
+		:global(html.runtime-tauri) .desktop-window-content {
+			transition: none;
+		}
+	}
+
+	@media (max-width: 720px) {
+		:global(html.runtime-tauri) {
+			--desktop-titlebar-height: 54px;
+			--desktop-window-gap: 8px;
+			--desktop-window-radius: 18px;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:global(html.runtime-tauri) {
+			--desktop-titlebar-height: 50px;
+			--desktop-window-gap: 6px;
+			--desktop-window-radius: 16px;
+		}
 	}
 
 	/* Scrollbar styling */

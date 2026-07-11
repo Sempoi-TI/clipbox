@@ -1347,6 +1347,42 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		gap: 2.5rem;
 	}
 
+	:global(html.runtime-tauri) .app-container {
+		min-height: 100%;
+		padding-top: 1.35rem;
+		padding-bottom: 1.75rem;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .app-container {
+		padding-top: 1.05rem;
+		padding-bottom: 1.5rem;
+		gap: 2.15rem;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .app-container {
+		padding-top: 1.1rem;
+		padding-inline: 1.25rem;
+		padding-bottom: 1.35rem;
+	}
+
+	@media (max-width: 720px) {
+		:global(html.runtime-tauri) .app-container {
+			padding-inline: 1rem;
+			padding-top: 1.05rem;
+			padding-bottom: 1.2rem;
+			gap: 1.9rem;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:global(html.runtime-tauri) .app-container {
+			padding-inline: 0.85rem;
+			padding-top: 0.95rem;
+			padding-bottom: 1rem;
+			gap: 1.6rem;
+		}
+	}
+
 	/* Layout Grid */
 	.app-grid {
 		display: grid;

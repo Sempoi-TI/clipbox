@@ -1,0 +1,673 @@
+---
+import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
+---
+
+<div class="desktop-titlebar" id="desktop-titlebar" aria-hidden="true" data-maximized="false" data-focused="true">
+	<div class="desktop-titlebar__side desktop-titlebar__side--leading">
+		<div class="desktop-titlebar__controls desktop-titlebar__controls--mac" role="toolbar" aria-label="Window controls">
+			<button type="button" class="window-action window-action--mac window-action--close" data-window-action="close" aria-label="Close window" title="Close window"></button>
+			<button type="button" class="window-action window-action--mac window-action--minimize" data-window-action="minimize" aria-label="Minimize window" title="Minimize window"></button>
+			<button type="button" class="window-action window-action--mac window-action--maximize" data-window-action="toggle-maximize" aria-label="Maximize window" aria-pressed="false" title="Maximize window"></button>
+		</div>
+	</div>
+
+	<div class="desktop-titlebar__drag" id="desktop-titlebar-drag" data-tauri-drag-region>
+		<div class="desktop-titlebar__brand" data-tauri-drag-region>
+			<img src={clipboxIconUrl} alt="" class="desktop-titlebar__icon" data-tauri-drag-region />
+			<span class="desktop-titlebar__title" data-tauri-drag-region>ClipBox</span>
+			<span class="desktop-titlebar__platform" id="desktop-titlebar-platform" data-tauri-drag-region>Desktop</span>
+		</div>
+	</div>
+
+	<div class="desktop-titlebar__side desktop-titlebar__side--trailing">
+		<div class="desktop-titlebar__controls desktop-titlebar__controls--default" role="toolbar" aria-label="Window controls">
+			<button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize window" title="Minimize window">
+				<svg class="window-action-icon window-action-icon--default" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 12h12"></path>
+				</svg>
+				<svg class="window-action-icon window-action-icon--windows" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="square" stroke-linejoin="miter">
+					<path d="M7 16h10"></path>
+				</svg>
+				<svg class="window-action-icon window-action-icon--linux" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M8 12h8"></path>
+				</svg>
+			</button>
+			<button type="button" class="window-action" data-window-action="toggle-maximize" aria-label="Maximize window" aria-pressed="false" title="Maximize window">
+				<svg class="window-action-icon icon-maximize window-action-icon--default" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="5" y="5" width="14" height="14" rx="2"></rect>
+				</svg>
+				<svg class="window-action-icon icon-maximize window-action-icon--windows" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="square" stroke-linejoin="miter">
+					<rect x="6.5" y="6.5" width="11" height="11"></rect>
+				</svg>
+				<svg class="window-action-icon icon-maximize window-action-icon--linux" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round">
+					<rect x="6" y="6" width="12" height="12" rx="2.5"></rect>
+				</svg>
+				<svg class="window-action-icon icon-restore window-action-icon--default" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M9 9h10v10H9z"></path>
+					<path d="M5 15V5h10"></path>
+				</svg>
+				<svg class="window-action-icon icon-restore window-action-icon--windows" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="square" stroke-linejoin="miter">
+					<path d="M9 9.5h8v8"></path>
+					<path d="M7 14.5V7h8.5"></path>
+					<path d="M7 14.5h8v-8"></path>
+				</svg>
+				<svg class="window-action-icon icon-restore window-action-icon--linux" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M9 9h9v9H9z"></path>
+					<path d="M6 15V6h9"></path>
+				</svg>
+			</button>
+			<button type="button" class="window-action window-action--close-desktop" data-window-action="close" aria-label="Close window" title="Close window">
+				<svg class="window-action-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M18 6 6 18"></path>
+					<path d="m6 6 12 12"></path>
+				</svg>
+			</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	const titlebar = document.getElementById('desktop-titlebar');
+	const titlebarDrag = document.getElementById('desktop-titlebar-drag');
+	const platformLabel = document.getElementById('desktop-titlebar-platform');
+	type DesktopBridge = Window['__CLIPBOX_DESKTOP__'];
+
+	async function resolveDesktopBridge(): Promise<DesktopBridge> {
+		if (window.__CLIPBOX_DESKTOP__) {
+			return window.__CLIPBOX_DESKTOP__;
+		}
+
+		return new Promise<DesktopBridge>((resolve) => {
+			const handleReady = () => {
+				window.removeEventListener('clipbox-desktop-ready', handleReady);
+				resolve(window.__CLIPBOX_DESKTOP__);
+			};
+
+			window.addEventListener('clipbox-desktop-ready', handleReady, { once: true });
+			window.setTimeout(() => {
+				window.removeEventListener('clipbox-desktop-ready', handleReady);
+				resolve(window.__CLIPBOX_DESKTOP__);
+			}, 250);
+		});
+	}
+
+	(async () => {
+		if (!titlebar) return;
+
+		const bridge = (await resolveDesktopBridge()) as
+			| {
+					isTauri: boolean;
+					platform?: 'macos' | 'windows' | 'linux' | 'unknown';
+					minimizeWindow: () => Promise<void>;
+					toggleMaximizeWindow: () => Promise<boolean>;
+					closeWindow: () => Promise<void>;
+					isWindowMaximized?: () => Promise<boolean>;
+					observeWindowState?: (callback: (state: { maximized: boolean; focused: boolean }) => void) => Promise<() => void>;
+			  }
+			| undefined;
+		if (!bridge?.isTauri) return;
+
+		const platform = bridge.platform || 'unknown';
+		const applyPlatformLabel = () => {
+			if (!platformLabel) return;
+
+			if (platform === 'macos') platformLabel.textContent = 'macOS';
+			else if (platform === 'windows') platformLabel.textContent = 'Windows';
+			else if (platform === 'linux') platformLabel.textContent = 'Linux';
+			else platformLabel.textContent = 'Desktop';
+		};
+
+		const syncMaximizeButtons = (maximized: boolean) => {
+			titlebar.querySelectorAll('[data-window-action="toggle-maximize"]').forEach((button) => {
+				button.setAttribute('aria-pressed', maximized ? 'true' : 'false');
+				button.setAttribute('aria-label', maximized ? 'Restore window' : 'Maximize window');
+				button.setAttribute('title', maximized ? 'Restore window' : 'Maximize window');
+			});
+		};
+
+		const applyWindowState = (state: { maximized: boolean; focused: boolean }) => {
+			titlebar.dataset.maximized = state?.maximized ? 'true' : 'false';
+			titlebar.dataset.focused = state?.focused === false ? 'false' : 'true';
+			document.documentElement.dataset.windowMaximized = state?.maximized ? 'true' : 'false';
+			document.documentElement.dataset.windowFocused = state?.focused === false ? 'false' : 'true';
+			syncMaximizeButtons(Boolean(state?.maximized));
+		};
+
+		titlebar.setAttribute('aria-hidden', 'false');
+		titlebar.dataset.ready = 'true';
+		titlebar.dataset.platform = platform;
+		document.documentElement.dataset.desktopPlatform = platform;
+		applyPlatformLabel();
+
+		titlebar.querySelectorAll('[data-window-action]').forEach((button) => {
+			button.addEventListener('click', async () => {
+				const action = button.getAttribute('data-window-action');
+
+				try {
+					if (action === 'minimize') {
+						await bridge.minimizeWindow();
+						return;
+					}
+
+					if (action === 'toggle-maximize') {
+						const maximized = await bridge.toggleMaximizeWindow();
+						applyWindowState({ maximized, focused: true });
+						return;
+					}
+
+					if (action === 'close') {
+						await bridge.closeWindow();
+					}
+				} catch (error) {
+					console.error(`Window action failed: ${action}`, error);
+				}
+			});
+		});
+
+		titlebarDrag?.addEventListener('dblclick', async () => {
+			try {
+				const maximized = await bridge.toggleMaximizeWindow();
+				applyWindowState({ maximized, focused: true });
+			} catch (error) {
+				console.error('Double click maximize failed', error);
+			}
+		});
+
+		let cleanupWindowState = null;
+
+		if (typeof bridge.observeWindowState === 'function') {
+			cleanupWindowState = await bridge.observeWindowState(applyWindowState);
+		} else if (typeof bridge.isWindowMaximized === 'function') {
+			applyWindowState({
+				maximized: await bridge.isWindowMaximized(),
+				focused: true
+			});
+		}
+
+		window.addEventListener(
+			'beforeunload',
+			() => {
+				cleanupWindowState?.();
+			},
+			{ once: true }
+		);
+	})();
+</script>
+
+<style>
+	.desktop-titlebar {
+		display: none;
+		position: relative;
+		z-index: 2;
+		height: var(--desktop-titlebar-height);
+		--desktop-titlebar-side-width: 116px;
+		padding: 0.7rem 1rem 0.55rem;
+		box-sizing: border-box;
+		grid-template-columns: var(--desktop-titlebar-side-width) minmax(0, 1fr) var(--desktop-titlebar-side-width);
+		align-items: center;
+		gap: 0.9rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--border-color) 92%, transparent);
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 6%, transparent), transparent 65%),
+			color-mix(in srgb, var(--bg-card-solid) 76%, transparent);
+		backdrop-filter: blur(18px);
+		-webkit-backdrop-filter: blur(18px);
+		user-select: none;
+		border-top-left-radius: calc(var(--desktop-window-radius) - 1px);
+		border-top-right-radius: calc(var(--desktop-window-radius) - 1px);
+		transition:
+			background 220ms ease,
+			border-color 220ms ease,
+			opacity 180ms ease,
+			box-shadow 220ms ease,
+			border-radius 220ms ease;
+	}
+
+	:global(html.runtime-tauri) .desktop-titlebar {
+		display: grid;
+	}
+
+	.desktop-titlebar[data-focused='false'] {
+		opacity: 0.92;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-titlebar {
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar {
+		--desktop-titlebar-side-width: 72px;
+		--desktop-titlebar-side-width: 78px;
+		padding-top: 0.42rem;
+		padding-bottom: 0.34rem;
+		padding-inline: 0.9rem 0.95rem;
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 72%),
+			color-mix(in srgb, var(--bg-card-solid) 98%, transparent);
+		border-bottom-color: rgba(255, 255, 255, 0.045);
+	}
+
+	:global(html.light[data-desktop-platform='macos']) .desktop-titlebar {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 76%),
+			color-mix(in srgb, #ffffff 98%, transparent);
+		border-bottom-color: rgba(99, 102, 241, 0.08);
+	}
+
+	:global(html[data-desktop-platform='windows']) .desktop-titlebar {
+		--desktop-titlebar-side-width: 118px;
+	}
+
+	:global(html[data-desktop-platform='linux']) .desktop-titlebar {
+		--desktop-titlebar-side-width: 112px;
+	}
+
+	.desktop-titlebar__side {
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+
+	.desktop-titlebar__side--leading {
+		justify-content: flex-start;
+	}
+
+	.desktop-titlebar__side--trailing {
+		justify-content: flex-end;
+	}
+
+	.desktop-titlebar__drag {
+		min-width: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: grab;
+	}
+
+	.desktop-titlebar__drag:active {
+		cursor: grabbing;
+	}
+
+	.desktop-titlebar__brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.7rem;
+		min-width: 0;
+		padding-inline: 0.5rem;
+		max-width: 100%;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--bg-hover) 48%, transparent);
+		border: 1px solid color-mix(in srgb, var(--border-color) 74%, transparent);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+		transition:
+			background 220ms ease,
+			border-color 220ms ease,
+			transform 220ms ease,
+			box-shadow 220ms ease;
+	}
+
+	:global(html.light) .desktop-titlebar__brand {
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-titlebar__brand {
+		border-color: color-mix(in srgb, var(--primary) 18%, var(--border-color));
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.05),
+			0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__brand {
+		background: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	:global(html[data-desktop-platform='macos'][data-window-focused='true']) .desktop-titlebar__brand {
+		background: rgba(255, 255, 255, 0.018);
+		border-color: rgba(255, 255, 255, 0.035);
+		box-shadow: none;
+	}
+
+	:global(html.light[data-desktop-platform='macos'][data-window-focused='true']) .desktop-titlebar__brand {
+		background: rgba(99, 102, 241, 0.045);
+		border-color: rgba(99, 102, 241, 0.08);
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-titlebar__brand {
+		transform: scale(0.995);
+	}
+
+	.desktop-titlebar__icon {
+		width: 18px;
+		height: 18px;
+		border-radius: 6px;
+		flex-shrink: 0;
+	}
+
+	.desktop-titlebar__title {
+		font-size: 0.92rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		color: var(--text-primary);
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__title {
+		font-size: 0.88rem;
+		font-weight: 650;
+		letter-spacing: -0.008em;
+	}
+
+	.desktop-titlebar__platform {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.32rem;
+		padding: 0.2rem 0.5rem;
+		border-radius: 999px;
+		border: 1px solid var(--border-color);
+		background: var(--bg-hover);
+		color: var(--text-muted);
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		text-transform: uppercase;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__platform {
+		padding: 0.18rem 0.42rem;
+		font-size: 0.68rem;
+		background: rgba(255, 255, 255, 0.035);
+		border-color: rgba(255, 255, 255, 0.05);
+		color: color-mix(in srgb, var(--text-muted) 92%, transparent);
+	}
+
+	:global(html.light[data-desktop-platform='macos']) .desktop-titlebar__platform {
+		background: rgba(99, 102, 241, 0.05);
+		border-color: rgba(99, 102, 241, 0.09);
+	}
+
+	.desktop-titlebar__platform::before {
+		content: '';
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 72%, #ffffff);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+		flex-shrink: 0;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__platform::before {
+		width: 0.36rem;
+		height: 0.36rem;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	.desktop-titlebar__controls {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		flex-shrink: 0;
+	}
+
+	.desktop-titlebar__controls--mac {
+		display: none;
+		padding-left: 0.15rem;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__controls--mac {
+		gap: 0.5rem;
+		padding-left: 0.08rem;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__controls--mac {
+		display: flex;
+	}
+
+	:global(html[data-desktop-platform='macos']) .desktop-titlebar__controls--default {
+		display: none;
+	}
+
+	.window-action {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 10px;
+		border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+		background: color-mix(in srgb, var(--bg-hover) 72%, transparent);
+		color: var(--text-muted);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition:
+			background 0.18s ease,
+			border-color 0.18s ease,
+			color 0.18s ease,
+			transform 0.18s ease,
+			box-shadow 0.18s ease;
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action {
+		border-radius: 12px;
+	}
+
+	:global(html[data-desktop-platform='linux']) .window-action {
+		border-radius: 9px;
+	}
+
+	.window-action:hover {
+		background: color-mix(in srgb, var(--bg-hover) 92%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 24%, var(--border-color));
+		color: var(--text-primary);
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	.window-action:active {
+		transform: translateY(1px) scale(0.98);
+	}
+
+	.window-action:focus-visible {
+		outline: 2px solid var(--border-focus);
+		outline-offset: 2px;
+	}
+
+	.window-action[aria-pressed='true']:not(.window-action--mac) {
+		background: color-mix(in srgb, var(--primary) 14%, var(--bg-hover));
+		border-color: color-mix(in srgb, var(--primary) 24%, var(--border-color));
+		color: var(--text-primary);
+	}
+
+	.window-action--close-desktop:hover {
+		background: rgba(239, 68, 68, 0.88);
+		border-color: rgba(239, 68, 68, 0.88);
+		color: #ffffff;
+	}
+
+	.window-action-icon {
+		display: none;
+		flex-shrink: 0;
+		transition: transform 0.18s ease;
+	}
+
+	.window-action-icon--default {
+		display: block;
+	}
+
+	.window-action:hover .window-action-icon {
+		transform: scale(1.05);
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action-icon--default,
+	:global(html[data-desktop-platform='linux']) .window-action-icon--default {
+		display: none;
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action-icon--windows,
+	:global(html[data-desktop-platform='linux']) .window-action-icon--linux {
+		display: block;
+	}
+
+	.icon-restore {
+		display: none;
+	}
+
+	.desktop-titlebar[data-maximized='true'] .icon-maximize {
+		display: none;
+	}
+
+	.desktop-titlebar[data-maximized='true'] .icon-restore {
+		display: block;
+	}
+
+	.window-action--mac {
+		width: 0.9rem;
+		height: 0.9rem;
+		padding: 0;
+		border: none;
+		border-radius: 999px;
+		position: relative;
+		background: transparent;
+		transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+	}
+
+	:global(html[data-desktop-platform='macos']) .window-action--mac {
+		width: 0.82rem;
+		height: 0.82rem;
+	}
+
+	.window-action--mac::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+	}
+
+	.window-action--mac:hover {
+		transform: scale(1.08);
+		filter: saturate(1.08);
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action {
+		background: color-mix(in srgb, var(--bg-hover) 82%, transparent);
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action:hover {
+		transform: translateY(-0.5px);
+	}
+
+	:global(html[data-desktop-platform='windows']) .window-action:not(.window-action--close-desktop):hover {
+		background: color-mix(in srgb, var(--primary) 10%, var(--bg-hover));
+	}
+
+	:global(html[data-desktop-platform='linux']) .window-action {
+		border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+	}
+
+	:global(html[data-desktop-platform='linux']) .window-action:hover {
+		background: color-mix(in srgb, var(--primary) 8%, var(--bg-hover));
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-titlebar {
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-titlebar__brand {
+		transform: none;
+		background: color-mix(in srgb, var(--primary) 9%, var(--bg-hover));
+	}
+
+	:global(html[data-desktop-platform='macos'][data-window-maximized='true']) .desktop-titlebar__brand {
+		background: transparent;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-titlebar__platform {
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 24%, var(--border-color));
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.desktop-titlebar,
+		.desktop-titlebar__brand,
+		.window-action,
+		.window-action-icon,
+		.window-action--mac {
+			transition: none;
+		}
+	}
+
+	.window-action--close {
+		background: #ff5f57;
+	}
+
+	.window-action--minimize {
+		background: #febc2e;
+	}
+
+	.window-action--maximize {
+		background: #28c840;
+	}
+
+	@media (max-width: 720px) {
+		.desktop-titlebar {
+			--desktop-titlebar-side-width: 98px;
+			padding-inline: 0.75rem;
+			gap: 0.65rem;
+		}
+
+		.desktop-titlebar__platform {
+			display: none;
+		}
+
+		.desktop-titlebar__brand {
+			padding-inline: 0.4rem;
+			gap: 0.55rem;
+		}
+	}
+
+	@media (max-width: 560px) {
+		.desktop-titlebar {
+			--desktop-titlebar-side-width: 88px;
+			padding-inline: 0.55rem;
+			gap: 0.5rem;
+		}
+
+		.desktop-titlebar__title {
+			font-size: 0.86rem;
+		}
+
+		.window-action {
+			width: 1.85rem;
+			height: 1.85rem;
+		}
+
+		:global(html[data-desktop-platform='macos']) .desktop-titlebar {
+			--desktop-titlebar-side-width: 68px;
+		}
+	}
+
+	@media (max-width: 440px) {
+		.desktop-titlebar {
+			--desktop-titlebar-side-width: 78px;
+			padding-inline: 0.45rem;
+		}
+
+		.desktop-titlebar__brand {
+			padding-inline: 0.3rem;
+		}
+
+		.desktop-titlebar__title {
+			font-size: 0.8rem;
+		}
+
+		.window-action {
+			width: 1.72rem;
+			height: 1.72rem;
+		}
+	}
+</style>
