@@ -74,7 +74,7 @@ import categories from '../data/categories.json';
     gap: 0.65rem;
     background: rgba(99, 102, 241, 0.08);
     border: 1px solid rgba(99, 102, 241, 0.22);
-    color: #c7d2fe;
+    color: var(--text-secondary);
     padding: 0.55rem 0.9rem 0.55rem 0.7rem;
     border-radius: 12px;
     cursor: pointer;
@@ -86,14 +86,12 @@ import categories from '../data/categories.json';
   .sort-btn:hover {
     background: rgba(99, 102, 241, 0.14);
     border-color: rgba(99, 102, 241, 0.42);
-    color: #e0e7ff;
+    color: var(--text-primary);
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(99, 102, 241, 0.16);
   }
 
-  .sort-btn:active {
-    transform: translateY(0);
-  }
+  .sort-btn:active { transform: translateY(0); }
 
   .sort-btn-icon {
     display: flex;
@@ -138,7 +136,8 @@ import categories from '../data/categories.json';
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-muted);
+    opacity: 0.7;
   }
 
   .sort-btn-value {
@@ -151,26 +150,6 @@ import categories from '../data/categories.json';
     flex-shrink: 0;
     padding: 0.55rem 0.9rem 0.55rem 0.7rem;
     font-size: inherit;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.22);
-    color: #c7d2fe;
-  }
-
-  .source-picker-wrapper .sort-btn:hover {
-    background: rgba(99, 102, 241, 0.14);
-    border-color: rgba(99, 102, 241, 0.42);
-    color: #e0e7ff;
-  }
-
-  .source-picker-wrapper .sort-btn.sort-asc {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.24);
-    color: #bbf7d0;
-  }
-
-  .source-picker-wrapper .sort-btn.sort-asc:hover {
-    background: rgba(16, 185, 129, 0.14);
-    border-color: rgba(16, 185, 129, 0.4);
   }
 
   .search-bar-wrapper {
@@ -182,22 +161,24 @@ import categories from '../data/categories.json';
 
 	.search-bar-wrapper input {
 		width: 100%;
-		background: var(--bg-card, rgba(22, 24, 37, 0.7));
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
-		color: var(--text-primary, #f3f4f6);
+		color: var(--text-primary);
 		padding: 0.875rem 1rem 0.875rem 2.75rem;
 		font-size: 1rem;
 		outline: none;
 		transition: all 0.2s;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 	}
 
 	.search-bar-wrapper input:focus {
-		border-color: var(--primary, #6366f1);
-		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1);
-		background: rgba(22, 24, 37, 0.9);
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 4px 20px rgba(0, 0, 0, 0.08);
+		background: var(--bg-input);
 	}
+
+	.search-bar-wrapper input::placeholder { color: var(--text-muted); }
 
 	.search-icon {
 		position: absolute;
@@ -250,10 +231,10 @@ import categories from '../data/categories.json';
 
 	.source-picker-wrapper button {
 		flex-shrink: 0;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		background: var(--bg-hover);
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
-		color: var(--text-primary, #f3f4f6);
+		color: var(--text-primary);
 		padding: 0.85rem 1rem;
 		font-size: 0.95rem;
 		cursor: pointer;
@@ -261,7 +242,8 @@ import categories from '../data/categories.json';
 	}
 
 	.source-picker-wrapper button:hover {
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--bg-card);
+		border-color: var(--primary);
 	}
 
 	.source-picker-wrapper .source-file-name {
@@ -280,9 +262,9 @@ import categories from '../data/categories.json';
 	}
 
 	.filter-btn {
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-		color: var(--text-muted, #9ca3af);
+		background: var(--bg-hover);
+		border: 1px solid var(--border-color);
+		color: var(--text-muted);
 		padding: 0.5rem 1rem;
 		border-radius: 15px;
 		font-size: 0.65rem;
@@ -292,9 +274,9 @@ import categories from '../data/categories.json';
 	}
 
 	.filter-btn:hover {
-		background: rgba(255, 255, 255, 0.06);
-		color: #ffffff;
-		border-color: rgba(255, 255, 255, 0.15);
+		background: var(--bg-card);
+		color: var(--text-primary);
+		border-color: var(--border-focus);
 	}
 
 	.filter-btn.active {
