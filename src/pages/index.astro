@@ -127,6 +127,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	let pinnedIds = new Set(); // IDs of pinned snippets (persisted separately)
 	let viewMode = 'grid'; // 'grid' | 'list'
 	let currentTags= []; // tags being built in the form
+	let persistedState = createEmptyPersistedState();
 
 	// DOM Elements
 	let form= null;
@@ -223,12 +224,178 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		return 'clipbox_dataset_metadata';
 	}
 
-	function saveDatasetMetadata() {
-		const metadata = {
+	function createEmptyPersistedState() {
+		return {
+			version: 1,
+			datasetMetadata: null,
+			datasets: {},
+			pinnedIds: [],
+			viewMode: 'grid'
+		};
+	}
+
+	function cloneJson(value) {
+		return JSON.parse(JSON.stringify(value));
+	}
+
+	function normalizePersistedState(raw) {
+		const normalized = createEmptyPersistedState();
+		if (!raw || typeof raw !== 'object') {
+			return normalized;
+		}
+
+		if (raw.datasetMetadata && typeof raw.datasetMetadata === 'object') {
+			const datasetKey = typeof raw.datasetMetadata.selectedDatasetKey === 'string' ? raw.datasetMetadata.selectedDatasetKey : null;
+			if (datasetKey) {
+				normalized.datasetMetadata = {
+					selectedDatasetKey: datasetKey,
+					selectedDatasetFriendlyName: typeof raw.datasetMetadata.selectedDatasetFriendlyName === 'string'
+						? raw.datasetMetadata.selectedDatasetFriendlyName
+						: datasetKey.replace(/^custom_/, '')
+				};
+			}
+		}
+
+		if (raw.datasets && typeof raw.datasets === 'object') {
+			for (const [datasetKey, datasetValue] of Object.entries(raw.datasets)) {
+				if (Array.isArray(datasetValue)) {
+					normalized.datasets[datasetKey] = cloneJson(datasetValue);
+				}
+			}
+		}
+
+		if (Array.isArray(raw.pinnedIds)) {
+			normalized.pinnedIds = raw.pinnedIds.map((id) => String(id));
+		}
+
+		if (raw.viewMode === 'list' || raw.viewMode === 'grid') {
+			normalized.viewMode = raw.viewMode;
+		}
+
+		return normalized;
+	}
+
+	function hasPersistedData(state) {
+		return Boolean(
+			(state.datasetMetadata && state.datasetMetadata.selectedDatasetKey)
+			|| Object.keys(state.datasets).length
+			|| state.pinnedIds.length
+			|| state.viewMode === 'list'
+		);
+	}
+
+	function loadPersistedStateFromLocalStorage() {
+		const state = createEmptyPersistedState();
+
+		try {
+			const metadata = localStorage.getItem(getDatasetMetadataKey());
+			if (metadata) {
+				state.datasetMetadata = JSON.parse(metadata);
+			}
+		} catch (error) {
+			console.warn('Unable to read dataset metadata from localStorage.', error);
+		}
+
+		try {
+			const rawPins = localStorage.getItem('clipbox_pinned_ids');
+			if (rawPins) {
+				state.pinnedIds = JSON.parse(rawPins).map((id) => String(id));
+			}
+		} catch (error) {
+			console.warn('Unable to read pinned snippets from localStorage.', error);
+		}
+
+		const storedViewMode = localStorage.getItem('clipbox_view_mode');
+		if (storedViewMode === 'list' || storedViewMode === 'grid') {
+			state.viewMode = storedViewMode;
+		}
+
+		for (let index = 0; index < localStorage.length; index += 1) {
+			const key = localStorage.key(index);
+			if (!key || !key.startsWith('clipbox_snippets_')) continue;
+			try {
+				const dataset = JSON.parse(localStorage.getItem(key) || 'null');
+				if (Array.isArray(dataset)) {
+					state.datasets[key.replace('clipbox_snippets_', '')] = dataset;
+				}
+			} catch (error) {
+				console.warn(`Unable to read dataset ${key} from localStorage.`, error);
+			}
+		}
+
+		return normalizePersistedState(state);
+	}
+
+	function savePersistedStateToLocalStorage() {
+		if (persistedState.datasetMetadata) {
+			localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(persistedState.datasetMetadata));
+		} else {
+			localStorage.removeItem(getDatasetMetadataKey());
+		}
+
+		localStorage.setItem('clipbox_pinned_ids', JSON.stringify(persistedState.pinnedIds));
+		localStorage.setItem('clipbox_view_mode', persistedState.viewMode);
+
+		for (const [datasetKey, datasetValue] of Object.entries(persistedState.datasets)) {
+			localStorage.setItem(getDatasetStorageKey(datasetKey), JSON.stringify(datasetValue));
+		}
+	}
+
+	async function savePersistedState() {
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.saveStorage === 'function') {
+			await desktopBridge.saveStorage(persistedState);
+			return;
+		}
+
+		savePersistedStateToLocalStorage();
+	}
+
+	async function hydratePersistedState() {
+		const legacyState = loadPersistedStateFromLocalStorage();
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.loadStorage === 'function') {
+			try {
+				const loadedState = normalizePersistedState(await desktopBridge.loadStorage());
+				if (!hasPersistedData(loadedState) && hasPersistedData(legacyState)) {
+					persistedState = legacyState;
+					await savePersistedState();
+					return;
+				}
+
+				persistedState = loadedState;
+				return;
+			} catch (error) {
+				console.error('Unable to load desktop JSON storage, falling back to localStorage.', error);
+			}
+		}
+
+		persistedState = legacyState;
+	}
+
+	function syncDatasetMetadataToState() {
+		persistedState.datasetMetadata = {
 			selectedDatasetFriendlyName,
 			selectedDatasetKey
 		};
-		localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(metadata));
+	}
+
+	async function saveDatasetMetadata() {
+		syncDatasetMetadataToState();
+		await savePersistedState();
+	}
+
+	function getPersistedDataset(datasetKey) {
+		const dataset = persistedState.datasets[datasetKey];
+		return Array.isArray(dataset) ? cloneJson(dataset) : null;
+	}
+
+	function getDesktopBridge() {
+		return window.__CLIPBOX_DESKTOP__;
+	}
+
+	function isDesktopRuntime() {
+		return Boolean(getDesktopBridge()?.isTauri);
 	}
 
 	function updateDatasetDisplayName(name) {
@@ -238,27 +405,78 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 	}
 
+	async function persistCurrentDataset() {
+		persistedState.datasets[selectedDatasetKey] = cloneJson(snippets);
+		syncDatasetMetadataToState();
+		await savePersistedState();
+	}
+
+	async function readFileAsText(file) {
+		if (typeof file.text === 'function') {
+			return file.text();
+		}
+
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(String(reader.result || ''));
+			reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+			reader.readAsText(file);
+		});
+	}
+
+	async function writeTextToClipboard(text) {
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.writeClipboardText === 'function') {
+			try {
+				await desktopBridge.writeClipboardText(text);
+				return;
+			} catch (error) {
+				console.warn('Native Tauri clipboard unavailable, using web clipboard fallback.', error);
+			}
+		}
+
+		if (navigator.clipboard?.writeText) {
+			try {
+				await navigator.clipboard.writeText(text);
+				return;
+			} catch (error) {
+				console.warn('Clipboard API unavailable, using fallback copy command.', error);
+			}
+		}
+
+		const helper = document.createElement('textarea');
+		helper.value = text;
+		helper.setAttribute('readonly', 'true');
+		helper.style.position = 'fixed';
+		helper.style.opacity = '0';
+		helper.style.pointerEvents = 'none';
+		document.body.appendChild(helper);
+		helper.select();
+		helper.setSelectionRange(0, helper.value.length);
+
+		const successful = document.execCommand('copy');
+		document.body.removeChild(helper);
+		if (!successful) {
+			throw new Error('Clipboard copy command failed');
+		}
+	}
+
 	async function loadDefaultSnippets() {
 		selectedDatasetKey = 'default';
 		updateDatasetDisplayName(DEFAULT_DATASET_FILE.split('/').pop() || 'snippets.json');
 
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
-		const stored = localStorage.getItem(storageKey);
-		if (stored) {
-			try {
-				snippets = JSON.parse(stored);
-				saveDatasetMetadata();
-				return;
-			} catch (e) {
-				console.warn('Invalid stored snippets for default dataset, reloading file version.');
-			}
+		const storedDataset = getPersistedDataset(selectedDatasetKey);
+		if (storedDataset) {
+			snippets = storedDataset;
+			await saveDatasetMetadata();
+			return;
 		}
 
 		try {
 			const response = await fetch(DEFAULT_DATASET_FILE);
 			if (response.ok) {
 				snippets = await response.json();
-				saveDatasetMetadata();
+				persistCurrentDataset();
 				return;
 			}
 			console.warn('Unable to load default snippets from', DEFAULT_DATASET_FILE);
@@ -267,22 +485,26 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 
 		snippets = [];
-		saveDatasetMetadata();
+		await saveDatasetMetadata();
 	}
 
 	async function loadCustomSnippetsFromFile(file) {
 		if (!file) return;
-		const text = await file.text();
+		const text = await readFileAsText(file);
+		await loadCustomSnippetsFromText(text, file.name);
+	}
+
+	async function loadCustomSnippetsFromText(text, fileName) {
 		try {
 			const parsed = JSON.parse(text);
 			if (!Array.isArray(parsed)) {
 				throw new Error('JSON file must contain an array of snippets');
 			}
 			snippets = parsed;
-			selectedDatasetKey = `custom_${file.name}`;
-			updateDatasetDisplayName(file.name);
-			saveSnippets();
-			showToast(`Loaded ${file.name}`, 'success');
+			selectedDatasetKey = `custom_${fileName}`;
+			updateDatasetDisplayName(fileName);
+			await saveSnippets();
+			showToast(`Loaded ${fileName}`, 'success');
 		} catch (e) {
 			console.error('Error loading custom snippet file:', e);
 			showToast('Invalid JSON file selected', 'error');
@@ -290,21 +512,23 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	function saveSnippets() {
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
-		localStorage.setItem(storageKey, JSON.stringify(snippets));
-		saveDatasetMetadata();
+		return persistCurrentDataset().catch((error) => {
+			console.error('Unable to persist snippets.', error);
+			showToast('Failed to save snippets locally', 'error');
+		});
 	}
 
 	// ---- Pin persistence (independent of dataset) ----
 	function loadPins() {
-		try {
-			const raw = localStorage.getItem('clipbox_pinned_ids');
-			if (raw) pinnedIds = new Set(JSON.parse(raw));
-		} catch { pinnedIds = new Set(); }
+		pinnedIds = new Set((persistedState.pinnedIds || []).map((id) => String(id)));
 	}
 
 	function savePins() {
-		localStorage.setItem('clipbox_pinned_ids', JSON.stringify([...pinnedIds]));
+		persistedState.pinnedIds = [...pinnedIds].map((id) => String(id));
+		return savePersistedState().catch((error) => {
+			console.error('Unable to persist pinned snippets.', error);
+			showToast('Failed to save pinned snippets locally', 'error');
+		});
 	}
 
 	function togglePin(id) {
@@ -315,7 +539,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			pinnedIds.add(id);
 			showToast('Snippet pinned!', 'success');
 		}
-		savePins();
+		void savePins();
 		renderSnippets();
 	}
 
@@ -324,8 +548,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	const VIEW_ICON_LIST = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
 
 	function loadViewMode() {
-		const saved = localStorage.getItem('clipbox_view_mode');
-		viewMode = saved === 'list' ? 'list' : 'grid';
+		viewMode = persistedState.viewMode === 'list' ? 'list' : 'grid';
 		applyViewMode();
 	}
 
@@ -349,31 +572,33 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		if (!btn) return;
 		btn.addEventListener('click', () => {
 			viewMode = viewMode === 'grid' ? 'list' : 'grid';
-			localStorage.setItem('clipbox_view_mode', viewMode);
+			persistedState.viewMode = viewMode;
+			void savePersistedState().catch((error) => {
+				console.error('Unable to persist view mode.', error);
+				showToast('Failed to save view mode locally', 'error');
+			});
 			applyViewMode();
 		});
 	}
 
 	async function loadSnippetsFromMetadata() {
-		const metadata = localStorage.getItem(getDatasetMetadataKey());
+		const metadata = persistedState.datasetMetadata;
 		if (!metadata) {
 			await loadDefaultSnippets();
 			return;
 		}
 
 		try {
-			const parsed = JSON.parse(metadata);
-			if (parsed?.selectedDatasetKey === 'default') {
+			if (metadata.selectedDatasetKey === 'default') {
 				await loadDefaultSnippets();
 				return;
 			}
 
-			const storageKey = getDatasetStorageKey(parsed.selectedDatasetKey || 'default');
-			const stored = localStorage.getItem(storageKey);
+			const stored = getPersistedDataset(metadata.selectedDatasetKey || 'default');
 			if (stored) {
-				snippets = JSON.parse(stored);
-				selectedDatasetKey = parsed.selectedDatasetKey;
-				updateDatasetDisplayName(parsed.selectedDatasetFriendlyName || parsed.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
+				snippets = stored;
+				selectedDatasetKey = metadata.selectedDatasetKey;
+				updateDatasetDisplayName(metadata.selectedDatasetFriendlyName || metadata.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
 				return;
 			}
 		} catch (e) {
@@ -383,11 +608,32 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		await loadDefaultSnippets();
 	}
 
+	async function openDatasetFromNativeDialog() {
+		const desktopBridge = getDesktopBridge();
+		if (!desktopBridge?.isTauri) return false;
+
+		try {
+			const selectedPath = await desktopBridge.openJsonFile();
+			if (!selectedPath) return true;
+
+			const text = await desktopBridge.readTextFile(selectedPath);
+			const fileName = selectedPath.split(/[\\/]/).pop() || 'dataset.json';
+			await loadCustomSnippetsFromText(text, fileName);
+			renderSnippets();
+		} catch (error) {
+			console.error('Error loading dataset from native dialog:', error);
+			showToast('Failed to open JSON file', 'error');
+		}
+
+		return true;
+	}
+
 	function wireDatasetFileChooser() {
 		if (!fileInput) return;
 
 		if (fileButton) {
-			fileButton.addEventListener('click', () => {
+			fileButton.addEventListener('click', async () => {
+				if (await openDatasetFromNativeDialog()) return;
 				if (fileInput) fileInput.click();
 			});
 		}
@@ -402,26 +648,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	function wireExportButton() {
 		if (!exportButton) return;
-		exportButton.addEventListener('click', exportSnippetsToClipboard);
+		exportButton.addEventListener('click', exportSnippetsToFile);
 	}
 
 	async function exportSnippetsToClipboard() {
 		try {
-			const storageKey = getDatasetStorageKey(selectedDatasetKey);
-			const raw = localStorage.getItem(storageKey);
-			if (!raw) {
-				showToast('No snippets found in localStorage for current dataset', 'error');
-				return;
-			}
-
-			const parsed = JSON.parse(raw);
-			if (!Array.isArray(parsed)) {
-				showToast('Default snippets data is invalid', 'error');
+			const parsed = getPersistedDataset(selectedDatasetKey) || cloneJson(snippets);
+			if (!Array.isArray(parsed) || parsed.length === 0) {
+				showToast('No snippets found for current dataset', 'error');
 				return;
 			}
 
 			const exportText = JSON.stringify(parsed, null, 2);
-			await navigator.clipboard.writeText(exportText);
+			await writeTextToClipboard(exportText);
 			showToast(`Exported ${parsed.length} default snippets to clipboard!`, 'success');
 		} catch (err) {
 			console.error('Export failed', err);
@@ -429,8 +668,38 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 	}
 
+	async function exportSnippetsToFile() {
+		const parsed = getPersistedDataset(selectedDatasetKey) || cloneJson(snippets);
+		if (!Array.isArray(parsed) || parsed.length === 0) {
+			showToast('No snippets found for current dataset', 'error');
+			return;
+		}
+
+		const desktopBridge = getDesktopBridge();
+		if (!desktopBridge?.isTauri) {
+			await exportSnippetsToClipboard();
+			return;
+		}
+
+		try {
+			const safeName = (selectedDatasetFriendlyName || 'clipbox-snippets.json').replace(/\.[^.]+$/, '') || 'clipbox-snippets';
+			const savePath = await desktopBridge.saveJsonFile(`${safeName}.json`);
+			if (!savePath) return;
+
+			await desktopBridge.writeTextFile(savePath, JSON.stringify(parsed, null, 2));
+			showToast(`Exported ${parsed.length} snippets to JSON file`, 'success');
+		} catch (error) {
+			console.error('Export file failed', error);
+			showToast('Failed to export JSON file', 'error');
+		}
+	}
+
 	async function init() {
 		initDomElements();
+		await hydratePersistedState();
+		if (isDesktopRuntime() && fileInput) {
+			fileInput.disabled = true;
+		}
 		loadPins();
 		loadViewMode();
 		await loadSnippetsFromMetadata();
@@ -478,7 +747,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	// Copy to clipboard with animation feedback
 	async function copyToClipboard(text, button) {
 		try {
-			await navigator.clipboard.writeText(text);
+			await writeTextToClipboard(text);
 			
 			// Visual feedback in button
 			const originalHTML = button.innerHTML;

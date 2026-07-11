@@ -1,92 +1,264 @@
 # Clipbox
 
-Una aplicación web moderna para organizar, guardar y buscar snippets de código. Construida con [Astro](https://astro.build).
+ClipBox es una app para organizar, guardar, buscar y reutilizar snippets de texto o código.
+
+Hoy el proyecto tiene dos capas:
+
+- `Astro` como frontend y capa de UI
+- `Tauri` como contenedor desktop y acceso nativo al sistema
+
+Esto significa que puedes seguir construyendo la mayor parte de la app como antes, pero ahora tienes soporte desktop real para portapapeles, archivos locales, persistencia JSON y empaquetado en macOS.
 
 ## ✨ Características
 
-- 🔍 **Búsqueda inteligente**: Filtra snippets por nombre, descripción o contenido
-- 📝 **Gestión de snippets**: Crea, edita y organiza tus snippets favoritos
-- 📦 **Múltiples colecciones**: Soporta diferentes colecciones de snippets (APTI, NCIF, etc.)
-- ⚡ **Rendimiento**: Construido con Astro para máxima velocidad
-- 🎨 **Interfaz limpia**: Diseño intuitivo y responsive
+- Búsqueda y filtrado de snippets
+- Creación, edición y borrado de snippets
+- Snippets pineados
+- Variables en snippets con placeholders tipo `{{nombre}}`
+- Vista `grid` y `list`
+- Importación y exportación de datasets JSON
+- Persistencia local en desktop con `Tauri`
+- Build de app desktop para macOS con `.app` y `.dmg`
 
 ## 🚀 Estructura del Proyecto
 
-La estructura del proyecto es la siguiente:
-
-```
+```text
 /
 ├── public/
-│   ├── snippets.json              # Colección principal de snippets
-│   ├── snippets-apti.json         # Snippets APTI
-│   └── snippets-ncif.json         # Snippets NCIF
+│   ├── snippets.json
+│   ├── snippets-apti.json
+│   └── snippets-ncif.json
 ├── src/
-│   ├── assets/                    # Recursos estáticos
+│   ├── assets/
+│   │   └── clipbox-icon.svg       # Fuente única del icono web + desktop
 │   ├── components/
-│   │   ├── Header.astro           # Encabezado de la aplicación
-│   │   ├── SearchFilter.astro     # Componente de búsqueda y filtrado
-│   │   ├── SnippetCardTemplate.astro  # Plantilla de tarjeta de snippet
-│   │   └── SnippetForm.astro      # Formulario para crear/editar snippets
 │   ├── layouts/
-│   │   └── Layout.astro           # Layout principal
-│   └── pages/
-│       └── index.astro            # Página de inicio
-├── astro.config.mjs               # Configuración de Astro
-├── tsconfig.json                  # Configuración de TypeScript
-└── package.json                   # Dependencias del proyecto
+│   ├── pages/
+│   └── scripts/
+│       └── tauri-bridge.ts        # Bridge frontend -> runtime Tauri
+├── src-tauri/
+│   ├── capabilities/              # Permisos desktop
+│   ├── icons/                     # Iconos nativos generados por Tauri
+│   ├── src/                       # Código Rust / comandos nativos
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── astro.config.mjs
+├── package.json
+└── README.md
 ```
 
-Para más información sobre la estructura de un proyecto Astro, consulta la [guía sobre estructura de proyectos](https://docs.astro.build/en/basics/project-structure/).
+## 📦 Requisitos
+
+- Node.js `>= 22.12.0`
+- npm
+- Rust + Cargo
+- En macOS: Xcode Command Line Tools
 
 ## 🧞 Comandos
 
 Todos los comandos se ejecutan desde la raíz del proyecto:
 
-| Comando                   | Acción                                            |
-| :------------------------ | :------------------------------------------------ |
-| `npm install`             | Instala las dependencias                          |
-| `npm run dev`             | Inicia servidor de desarrollo en `localhost:4321` |
-| `npm run build`           | Construye para producción en `./dist/`            |
-| `npm run preview`         | Vista previa del build local                      |
-| `astro dev --background`  | Inicia servidor en modo background                |
-| `astro dev stop`          | Detiene servidor en background                    |
+| Comando | Acción |
+| :-- | :-- |
+| `npm install` | Instala dependencias del frontend |
+| `npm run dev` | Inicia la app web con Astro |
+| `npm run build` | Genera el build web en `dist/` |
+| `npm run preview` | Sirve el build web localmente |
+| `npm run desktop:dev` | Inicia la app desktop con Tauri usando Astro como frontend |
+| `npm run desktop:build:debug` | Genera una build desktop debug (`.app` y `.dmg`) |
+| `npm run desktop:build` | Genera una build desktop release (`.app` y `.dmg`) |
+| `npm run desktop:icons` | Regenera los iconos nativos de Tauri desde `src/assets/clipbox-icon.svg` |
+| `astro dev --background` | Inicia Astro en background |
+| `astro dev status` | Revisa el estado del servidor background |
+| `astro dev logs` | Muestra logs del servidor background |
+| `astro dev stop` | Detiene el servidor background |
 
-## 🛠️ Desarrollo
+## 🛠️ Guía práctica de desarrollo
 
-### Requisitos
+### Cómo pensar la app ahora
 
-- Node.js >= 22.12.0
-- npm o pnpm
+- `Astro` sigue siendo la UI principal
+- `Tauri` solo entra cuando necesitas capacidades nativas del sistema
+- La mayoría de nuevas features visuales se siguen haciendo igual que antes
 
-### Instalación
+### Cuándo seguir trabajando solo con Astro
+
+Usa `Astro` normalmente si la feature es de:
+
+- UI o layout
+- formularios y modales
+- filtros y búsquedas
+- vista `grid/list`
+- tooltips, animaciones y estilos
+- lógica de presentación
+- componentes nuevos
+
+Ejemplos:
+
+- nueva card de snippet
+- nuevos filtros
+- agrupación por categorías
+- nuevo modal de edición
+- mejoras visuales de la interfaz
+
+### Cuándo usar Tauri
+
+Usa `Tauri` si la feature necesita hablar con el sistema operativo:
+
+- portapapeles nativo
+- abrir o guardar archivos reales
+- persistencia local de escritorio
+- notificaciones del sistema
+- atajos globales
+- menú nativo
+- bandeja del sistema
+- acceso a filesystem o base de datos local
+
+### Regla simple
+
+- Si vive en la interfaz: hazlo en `Astro`
+- Si necesita capacidades del sistema: hazlo con `Tauri`
+
+### Flujo recomendado de trabajo
+
+1. Diseña primero la feature en la UI
+2. Decide si necesita integración nativa
+3. Si no la necesita, resuélvela solo en frontend
+4. Si la necesita, divide la feature así:
+
+- UI en `Astro`
+- helper o bridge en `src/scripts/tauri-bridge.ts`
+- plugin o comando nativo en `src-tauri/`
+
+### Qué comando usar durante el desarrollo
+
+- `npm run dev`
+  Usa este comando si estás iterando UI rápida, estilos, layouts o lógica web.
+
+- `npm run desktop:dev`
+  Usa este comando si la feature toca clipboard, filesystem, persistencia local, diálogos nativos o cualquier comportamiento desktop.
+
+### Recomendación práctica
+
+- Para cambios puramente visuales: empieza con `npm run dev`
+- Antes de cerrar una feature que toque capacidades nativas: valida con `npm run desktop:dev`
+
+## 💾 Persistencia y datos
+
+- En modo desktop, la app usa un JSON local (`clipbox-storage.json`) dentro del directorio de datos de la app
+- En modo web, mantiene fallbacks usando `localStorage`
+- La importación y exportación de datasets usa diálogos nativos en desktop
+
+## 🎨 Iconos
+
+- La fuente única del icono es `src/assets/clipbox-icon.svg`
+- El favicon web usa ese mismo SVG
+- Los iconos nativos de `Tauri` se regeneran con:
 
 ```bash
-npm install
+npm run desktop:icons
 ```
 
-### Iniciar desarrollo
+Si cambias el icono, vuelve a correr ese comando antes de generar una nueva build desktop.
+
+## 🚚 Distribución desktop
+
+### Build para distribución
+
+Para generar una release desktop:
 
 ```bash
-# Modo normal
-npm run dev
-
-# Modo background (recomendado)
-astro dev --background
+npm run desktop:build
 ```
 
-La aplicación estará disponible en `http://localhost:4321`
+Ese comando genera una build release y crea los bundles configurados en `Tauri`.
 
-### Compilar para producción
+### Artefactos esperados en macOS
+
+Después del build release, encontrarás archivos como estos:
+
+```text
+src-tauri/target/release/bundle/macos/ClipBox.app
+src-tauri/target/release/bundle/dmg/ClipBox_1.0.0_aarch64.dmg
+```
+
+### Diferencia entre debug y release
+
+- `npm run desktop:build:debug`
+  Sirve para validar localmente, probar empaquetado y revisar artefactos rápido.
+
+- `npm run desktop:build`
+  Es la build pensada para distribuir.
+
+## 🏷️ Cómo preparar una release
+
+Antes de publicar una nueva versión:
+
+1. Actualiza la versión en:
+- `package.json`
+- `src-tauri/tauri.conf.json`
+- `src-tauri/Cargo.toml`
+2. Regenera iconos si cambió el branding:
+- `npm run desktop:icons`
+3. Genera la build release:
+- `npm run desktop:build`
+4. Verifica manualmente la app `.app` y el instalador `.dmg`
+
+## 📤 Cómo subir la release desktop a GitHub
+
+### Opción manual desde GitHub
+
+1. Haz commit de tus cambios
+2. Crea y sube un tag:
 
 ```bash
-npm run build
+git add .
+git commit -m "release: v1.0.1"
+git tag v1.0.1
+git push origin main
+git push origin v1.0.1
 ```
 
-Los archivos compilados se guardarán en el directorio `dist/`.
+3. Entra a tu repositorio en GitHub
+4. Abre `Releases`
+5. Pulsa `Draft a new release`
+6. Selecciona el tag `v1.0.1`
+7. Pon título de release, por ejemplo `ClipBox v1.0.1`
+8. En `Attach binaries`, adjunta el `.dmg`
+9. Publica la release
+
+### Archivo que normalmente subirías
+
+En macOS, el archivo más práctico para compartir es:
+
+```text
+src-tauri/target/release/bundle/dmg/ClipBox_1.0.1_aarch64.dmg
+```
+
+También puedes adjuntar la `.app`, pero normalmente el `.dmg` es el artefacto más cómodo para distribución.
+
+### Recomendación
+
+Para una primera distribución personal o interna:
+
+- publica el `.dmg` en GitHub Releases
+- añade notas cortas con cambios y fixes
+- prueba la descarga desde una máquina limpia si es posible
+
+## ⚠️ Nota sobre firma y Gatekeeper
+
+Si distribuyes la app fuera de tu máquina, macOS puede mostrar advertencias de seguridad si el binario no está firmado y notarizado.
+
+Para distribución real a terceros, después conviene añadir:
+
+- firma con Apple Developer ID
+- notarización de Apple
+
+Eso no es obligatorio para seguir desarrollando localmente, pero sí es recomendable para una release pública.
 
 ## 📚 Más información
 
 - [Documentación de Astro](https://docs.astro.build)
-- [Guía de estructura de proyectos](https://docs.astro.build/en/basics/project-structure/)
+- [Documentación de Tauri](https://v2.tauri.app)
 - [Guía de componentes Astro](https://docs.astro.build/en/basics/astro-components/)
-- [Guía de enrutamiento y páginas dinámicas](https://docs.astro.build/en/guides/routing/)
+- [Guía de rutas en Astro](https://docs.astro.build/en/guides/routing/)

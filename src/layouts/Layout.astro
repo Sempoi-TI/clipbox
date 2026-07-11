@@ -1,9 +1,13 @@
+---
+import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
+---
+
 <!doctype html>
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='64' y2='64' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23bg)'/%3E%3Crect x='14' y='14' width='28' height='28' rx='5' ry='5' stroke='white' stroke-width='4' fill='none'/%3E%3Crect x='26' y='26' width='24' height='24' rx='5' ry='5' stroke='white' stroke-width='4' fill='url(%23bg)'/%3E%3C/svg%3E" />
+		<link rel="icon" type="image/svg+xml" href={clipboxIconUrl} />
 		<meta name="generator" content={Astro.generator} />
 		<title>ClipBox - Copy Text Fast</title>
 		<!-- Anti-flash: apply saved theme before first paint -->
@@ -12,6 +16,9 @@
 				const saved = localStorage.getItem('clipbox_theme');
 				if (saved === 'light') document.documentElement.classList.add('light');
 			})();
+		</script>
+		<script>
+			import '../scripts/tauri-bridge';
 		</script>
 		<!-- Google Fonts: Plus Jakarta Sans & Inter -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">

@@ -9,9 +9,21 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "tauri": "PATH=\"$HOME/.cargo/bin:$PATH\" tauri",
+    "desktop:icons": "npm run tauri -- icon src/assets/clipbox-icon.svg --output src-tauri/icons",
+    "desktop:dev": "npm run tauri -- dev",
+    "desktop:build": "npm run tauri -- build",
+    "desktop:build:debug": "npm run tauri -- build --debug"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "astro": "^7.0.7"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
   }
 }
