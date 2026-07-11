@@ -33,6 +33,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 		<!-- Toast Container -->
 		<div class="toast-container" id="toast-container"></div>
+		<div class="snippet-preview-tooltip" id="snippet-preview-tooltip" aria-hidden="true"></div>
 		
 		<!-- Edit Modal -->
 		<div class="modal-backdrop" id="edit-modal" aria-hidden="true">
@@ -114,9 +115,9 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	// Model representing a text snippet
 	
-	const DEFAULT_DATASET_FILE = '/snippets.json';
+	const DEFAULT_DATASET_FILE = '/snippets-apti.json';
 	let selectedDatasetKey = 'default';
-	let selectedDatasetFriendlyName = 'snippets.json';
+	let selectedDatasetFriendlyName = 'snippets-apti.json';
   let sortOrderAscending = true;
 
   // State
@@ -289,7 +290,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	function saveSnippets() {
-		const storageKey = "clipbox_snippets";
+		const storageKey = getDatasetStorageKey(selectedDatasetKey);
 		localStorage.setItem(storageKey, JSON.stringify(snippets));
 		saveDatasetMetadata();
 	}
@@ -406,10 +407,10 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	async function exportSnippetsToClipboard() {
 		try {
-			const storageKey = 'clipbox_snippets';
+			const storageKey = getDatasetStorageKey(selectedDatasetKey);
 			const raw = localStorage.getItem(storageKey);
 			if (!raw) {
-				showToast('No snippets found in localStorage for default dataset', 'error');
+				showToast('No snippets found in localStorage for current dataset', 'error');
 				return;
 			}
 
@@ -730,7 +731,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				addEditTag(editTagsInput.value);
 				editTagsInput.value = '';
 			}
-			const idx = snippets.findIndex(s => s.id === id);
+			const idx = snippets.findIndex(s => String(s.id) === id);
 			if (idx !== -1) {
 				snippets[idx] = {
 					...snippets[idx],
@@ -792,6 +793,68 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	function isSnippetLink(snippet) {
 		return snippet.category === 'Link' && getSnippetUrl(snippet.text) !== null;
 	}
+
+	const snippetPreviewTooltip = document.getElementById('snippet-preview-tooltip');
+	let activePreviewAnchor = null;
+
+	function isSnippetContentTruncated(element) {
+		if (!element) return false;
+		const verticalOverflow = element.scrollHeight - element.clientHeight > 1;
+		const horizontalOverflow = element.scrollWidth - element.clientWidth > 1;
+		return verticalOverflow || horizontalOverflow;
+	}
+
+	function positionSnippetPreviewTooltip(anchor) {
+		if (!snippetPreviewTooltip || !anchor) return;
+		const padding = 12;
+		const offset = 10;
+		const anchorRect = anchor.getBoundingClientRect();
+		const tooltipRect = snippetPreviewTooltip.getBoundingClientRect();
+
+		let top = anchorRect.bottom + offset;
+		if (top + tooltipRect.height > window.innerHeight - padding) {
+			top = Math.max(padding, anchorRect.top - tooltipRect.height - offset);
+		}
+
+		let left = anchorRect.left;
+		if (left + tooltipRect.width > window.innerWidth - padding) {
+			left = window.innerWidth - tooltipRect.width - padding;
+		}
+		left = Math.max(padding, left);
+
+		snippetPreviewTooltip.style.top = `${top}px`;
+		snippetPreviewTooltip.style.left = `${left}px`;
+	}
+
+	function hideSnippetPreviewTooltip() {
+		if (!snippetPreviewTooltip) return;
+		snippetPreviewTooltip.classList.remove('visible');
+		snippetPreviewTooltip.setAttribute('aria-hidden', 'true');
+		activePreviewAnchor = null;
+	}
+
+	function showSnippetPreviewTooltip(text, anchor) {
+		if (!snippetPreviewTooltip || !anchor) return;
+		snippetPreviewTooltip.textContent = text;
+		snippetPreviewTooltip.setAttribute('aria-hidden', 'false');
+		activePreviewAnchor = anchor;
+		positionSnippetPreviewTooltip(anchor);
+		snippetPreviewTooltip.classList.add('visible');
+	}
+
+	window.addEventListener('resize', () => {
+		if (!activePreviewAnchor) return;
+		if (!isSnippetContentTruncated(activePreviewAnchor)) {
+			hideSnippetPreviewTooltip();
+			return;
+		}
+		positionSnippetPreviewTooltip(activePreviewAnchor);
+	});
+
+	document.addEventListener('scroll', () => {
+		if (!activePreviewAnchor) return;
+		positionSnippetPreviewTooltip(activePreviewAnchor);
+	}, true);
 
 	// Render the list of snippets
 	function renderSnippets() {
@@ -866,9 +929,17 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 
 		// Set text content
+		const contentEl = clone.querySelector('.snippet-content');
 		const codeEl = clone.querySelector('code');
 		if (codeEl) {
 			codeEl.textContent = snippet.text;
+		}
+		if (contentEl) {
+			contentEl.addEventListener('mouseenter', () => {
+				if (!isSnippetContentTruncated(contentEl)) return;
+				showSnippetPreviewTooltip(snippet.text, contentEl);
+			});
+			contentEl.addEventListener('mouseleave', hideSnippetPreviewTooltip);
 		}
 
 		// Set tags
@@ -1058,6 +1129,41 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		gap: 0.75rem;
 		z-index: 1000;
 		pointer-events: none;
+	}
+
+	.snippet-preview-tooltip {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 1100;
+		max-width: min(560px, calc(100vw - 1.5rem));
+		max-height: min(360px, calc(100vh - 1.5rem));
+		overflow: auto;
+		padding: 0.9rem 1rem;
+		border-radius: 14px;
+		border: 1px solid rgba(99, 102, 241, 0.22);
+		background: rgba(13, 18, 34, 0.94);
+		color: var(--text-primary);
+		box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		font-family: 'Fira Code', 'Courier New', Courier, monospace;
+		font-size: 0.84rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		word-break: break-word;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(6px) scale(0.98);
+		transform-origin: top left;
+		transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+		pointer-events: none;
+	}
+
+	.snippet-preview-tooltip.visible {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0) scale(1);
 	}
 
 	.toast {

@@ -52,7 +52,7 @@
   },
   {
     "id": 45,
-    "text": "net user T61117 /domain | findstr TTIB",
+    "text": "net user {{matricula}} /domain | findstr TTIB",
     "description": "Ver grupos de red por matricula",
     "tags": [
       "red"
@@ -71,7 +71,7 @@
   {
     "id": 43,
     "text": "powershell.exe -executionpolicy bypass -File kafka-local-server.ps1",
-    "description": "Iniciar Confluent Cloud",
+    "description": "Iniciar Confluent Cloud Local",
     "tags": [
       "kafka"
     ],
@@ -124,7 +124,7 @@
   },
   {
     "id": 37,
-    "text": "kubectl exec -it <nombre-pod> -- /bin/bash",
+    "text": "kubectl exec -it {{nombre-pod}} -- /bin/bash",
     "description": "Ingresar al bash del pod",
     "tags": [
       "comando"
@@ -133,7 +133,7 @@
   },
   {
     "id": 36,
-    "text": "kubectl logs -f <nombre-del-pod>",
+    "text": "kubectl logs -f {{nombre-pod}}",
     "description": "Ver logs en tiempo real por componente",
     "tags": [
       "comando"
@@ -151,7 +151,7 @@
   },
   {
     "id": 34,
-    "text": "kubectl logs business-ach-operations-notification-v1-8447c54bd-8mvcc > retry.log",
+    "text": "kubectl logs {{nombre-pod-id}} retry.log",
     "description": "Guardar logs en un Archivo",
     "tags": [
       "comando"
