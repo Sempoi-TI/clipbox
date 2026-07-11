@@ -7,7 +7,7 @@ Hoy el proyecto tiene dos capas:
 - `Astro` como frontend y capa de UI
 - `Tauri` como contenedor desktop y acceso nativo al sistema
 
-Esto significa que puedes seguir construyendo la mayor parte de la app como antes, pero ahora tienes soporte desktop real para portapapeles, archivos locales, persistencia JSON y empaquetado en macOS.
+Esto significa que puedes seguir construyendo la mayor parte de la app como antes, pero ahora tienes soporte desktop real para portapapeles, archivos locales, persistencia JSON y empaquetado para macOS y Windows.
 
 ## ✨ Características
 
@@ -19,6 +19,7 @@ Esto significa que puedes seguir construyendo la mayor parte de la app como ante
 - Importación y exportación de datasets JSON
 - Persistencia local en desktop con `Tauri`
 - Build de app desktop para macOS con `.app` y `.dmg`
+- Build de app desktop para Windows con instaladores `.exe` (`NSIS`) y `.msi`
 
 ## 🚀 Estructura del Proyecto
 
@@ -53,6 +54,7 @@ Esto significa que puedes seguir construyendo la mayor parte de la app como ante
 - npm
 - Rust + Cargo
 - En macOS: Xcode Command Line Tools
+- En Windows: Microsoft Visual Studio C++ Build Tools
 
 ## 🧞 Comandos
 
@@ -67,6 +69,8 @@ Todos los comandos se ejecutan desde la raíz del proyecto:
 | `npm run desktop:dev` | Inicia la app desktop con Tauri usando Astro como frontend |
 | `npm run desktop:build:debug` | Genera una build desktop debug (`.app` y `.dmg`) |
 | `npm run desktop:build` | Genera una build desktop release (`.app` y `.dmg`) |
+| `npm run desktop:build:macos` | Genera el bundle desktop de macOS (`.app` y `.dmg`) |
+| `npm run desktop:build:windows` | Genera los instaladores de Windows (`NSIS .exe` y `.msi`) |
 | `npm run desktop:icons` | Regenera los iconos nativos de Tauri desde `src/assets/clipbox-icon.svg` |
 | `astro dev --background` | Inicia Astro en background |
 | `astro dev status` | Revisa el estado del servidor background |
@@ -165,7 +169,7 @@ Si cambias el icono, vuelve a correr ese comando antes de generar una nueva buil
 
 ### Build para distribución
 
-Para generar una release desktop:
+Para generar una release desktop local:
 
 ```bash
 npm run desktop:build
@@ -181,6 +185,35 @@ Después del build release, encontrarás archivos como estos:
 src-tauri/target/release/bundle/macos/ClipBox.app
 src-tauri/target/release/bundle/dmg/ClipBox_1.0.0_aarch64.dmg
 ```
+
+### Artefactos esperados en Windows
+
+Después del build release en Windows, encontrarás archivos como estos:
+
+```text
+src-tauri/target/release/bundle/nsis/ClipBox_1.0.0_x64-setup.exe
+src-tauri/target/release/bundle/msi/ClipBox_1.0.0_x64_en-US.msi
+```
+
+### Comandos por sistema operativo
+
+- En `macOS`:
+
+```bash
+npm install
+npm run build
+npm run desktop:build:macos
+```
+
+- En `Windows`:
+
+```bash
+npm install
+npm run build
+npm run desktop:build:windows
+```
+
+Regla práctica: el instalador de cada sistema se construye en su propio sistema operativo, salvo que uses CI con runners por plataforma.
 
 ### Diferencia entre debug y release
 
@@ -202,7 +235,10 @@ Antes de publicar una nueva versión:
 - `npm run desktop:icons`
 3. Genera la build release:
 - `npm run desktop:build`
-4. Verifica manualmente la app `.app` y el instalador `.dmg`
+4. Genera el instalador del sistema que vayas a publicar:
+- En `macOS`: `npm run desktop:build:macos`
+- En `Windows`: `npm run desktop:build:windows`
+5. Verifica manualmente los artefactos generados
 
 ## 📤 Cómo subir la release desktop a GitHub
 
@@ -224,7 +260,7 @@ git push origin v1.0.1
 5. Pulsa `Draft a new release`
 6. Selecciona el tag `v1.0.1`
 7. Pon título de release, por ejemplo `ClipBox v1.0.1`
-8. En `Attach binaries`, adjunta el `.dmg`
+8. En `Attach binaries`, adjunta el `.dmg` de macOS, el `.exe` de Windows y el `.msi`
 9. Publica la release
 
 ### Archivo que normalmente subirías
@@ -237,13 +273,48 @@ src-tauri/target/release/bundle/dmg/ClipBox_1.0.1_aarch64.dmg
 
 También puedes adjuntar la `.app`, pero normalmente el `.dmg` es el artefacto más cómodo para distribución.
 
+En Windows, el archivo más práctico para compartir es:
+
+```text
+src-tauri/target/release/bundle/nsis/ClipBox_1.0.1_x64-setup.exe
+src-tauri/target/release/bundle/msi/ClipBox_1.0.1_x64_en-US.msi
+```
+
 ### Recomendación
 
 Para una primera distribución personal o interna:
 
 - publica el `.dmg` en GitHub Releases
+- publica también el `.exe` y el `.msi` de Windows si vas a distribuir en ambos sistemas
 - añade notas cortas con cambios y fixes
 - prueba la descarga desde una máquina limpia si es posible
+
+### Opción automática con GitHub Actions
+
+El proyecto ahora incluye el workflow:
+
+```text
+.github/workflows/release-desktop.yml
+```
+
+Ese workflow:
+
+- se ejecuta al hacer push de un tag con formato `v*`
+- genera en `macOS` los bundles `.app` y `.dmg`
+- genera en `Windows` los instaladores `NSIS .exe` y `MSI`
+- crea o actualiza automáticamente la GitHub Release del tag y adjunta los binarios
+
+Flujo recomendado:
+
+```bash
+git add .
+git commit -m "release: v1.0.1"
+git tag v1.0.1
+git push origin main
+git push origin v1.0.1
+```
+
+Después de subir el tag, GitHub Actions se encarga de compilar y publicar los assets automáticamente.
 
 ## ⚠️ Nota sobre firma y Gatekeeper
 

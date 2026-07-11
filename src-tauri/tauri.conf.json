@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "ClipBox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.clipbox.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -32,7 +32,9 @@
     "active": true,
     "targets": [
       "app",
-      "dmg"
+      "dmg",
+      "nsis",
+      "msi"
     ],
     "icon": [
       "icons/32x32.png",

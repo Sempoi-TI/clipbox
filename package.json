@@ -1,7 +1,7 @@
 {
   "name": "clipbox",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -14,6 +14,8 @@
     "desktop:icons": "npm run tauri -- icon src/assets/clipbox-icon.svg --output src-tauri/icons",
     "desktop:dev": "npm run tauri -- dev",
     "desktop:build": "npm run tauri -- build",
+    "desktop:build:macos": "npm run tauri -- build --bundles app,dmg",
+    "desktop:build:windows": "npx tauri build --bundles nsis,msi",
     "desktop:build:debug": "npm run tauri -- build --debug"
   },
   "dependencies": {

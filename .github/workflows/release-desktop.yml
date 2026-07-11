@@ -1,0 +1,62 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-tauri:
+    name: Build ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS
+            os: macos-latest
+            bundle_args: --bundles app,dmg
+          - label: Windows
+            os: windows-latest
+            bundle_args: --bundles nsis,msi
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and publish desktop release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ClipBox ${{ github.ref_name }}
+          releaseBody: |
+            Instaladores desktop generados automáticamente para este tag.
+
+            Artefactos incluidos:
+            - macOS: `.app` y `.dmg`
+            - Windows: instaladores `NSIS .exe` y `MSI`
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.bundle_args }}
