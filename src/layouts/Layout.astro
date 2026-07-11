@@ -38,9 +38,11 @@
 		--text-secondary: #d1d5db;
 		--text-muted:     #9ca3af;
 		--text-faint:     rgba(255, 255, 255, 0.2);
-		--scrollbar-track: #0f1016;
-		--scrollbar-thumb: #2d3142;
-		--scrollbar-hover: #40455c;
+		--scrollbar-size: 10px;
+		--scrollbar-radius: 999px;
+		--scrollbar-track: rgba(255, 255, 255, 0.04);
+		--scrollbar-thumb: rgba(99, 102, 241, 0.28);
+		--scrollbar-hover: rgba(129, 140, 248, 0.52);
 		--glass-bg:       rgba(22, 24, 37, 0.6);
 		--glass-border:   rgba(255, 255, 255, 0.08);
 		--primary:        #6366f1;
@@ -64,9 +66,11 @@
 		--text-secondary: #374151;
 		--text-muted:     #6b7280;
 		--text-faint:     rgba(0, 0, 0, 0.2);
-		--scrollbar-track: #e5e7eb;
-		--scrollbar-thumb: #c4c9d4;
-		--scrollbar-hover: #9ca3af;
+		--scrollbar-size: 10px;
+		--scrollbar-radius: 999px;
+		--scrollbar-track: rgba(99, 102, 241, 0.08);
+		--scrollbar-thumb: rgba(99, 102, 241, 0.24);
+		--scrollbar-hover: rgba(79, 70, 229, 0.42);
 		--glass-bg:       rgba(255, 255, 255, 0.7);
 		--glass-border:   rgba(99, 102, 241, 0.15);
 		--primary:        #6366f1;
@@ -89,8 +93,35 @@
 	}
 
 	/* Scrollbar styling */
-	::-webkit-scrollbar { width: 8px; height: 8px; }
-	::-webkit-scrollbar-track  { background: var(--scrollbar-track); }
-	::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 4px; }
-	::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+	}
+
+	::-webkit-scrollbar {
+		width: var(--scrollbar-size);
+		height: var(--scrollbar-size);
+	}
+
+	::-webkit-scrollbar-track {
+		background: var(--scrollbar-track);
+		border-radius: var(--scrollbar-radius);
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: var(--scrollbar-radius);
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: var(--scrollbar-hover);
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
 </style>
