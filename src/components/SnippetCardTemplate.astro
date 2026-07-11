@@ -164,8 +164,7 @@
 	/* ── List view ── */
 	/* Applied when #snippets-container has .view-list */
 
-	.view-list .snippet-card,
-	.view-list .pinned-grid .snippet-card {
+	.view-list .snippet-card {
 		flex-direction: row;
 		align-items: center;
 		padding: 0.6rem 1rem;
@@ -234,12 +233,6 @@
 
 	/* Re-order: badge | body | actions */
 	.view-list .snippet-card { flex-direction: row; }
-
-	/* Pinned section in list view */
-	.view-list .pinned-grid {
-		grid-template-columns: 1fr;
-		gap: 0.4rem;
-	}
 
 	/* Container switches from grid to single column */
 	.snippets-container-inner.view-list,
