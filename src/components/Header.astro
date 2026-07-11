@@ -8,7 +8,33 @@
 			<p class="tagline">Save and copy your favorite texts with a single click.</p>
 		</div>
 	</div>
+
+	<button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark theme">
+		<!-- Moon icon (shown in dark mode) -->
+		<svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+		<!-- Sun icon (shown in light mode) -->
+		<svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+	</button>
 </header>
+
+<script>
+	const btn = document.getElementById('theme-toggle');
+	const html = document.documentElement;
+
+	function applyTheme(theme: string) {
+		if (theme === 'light') {
+			html.classList.add('light');
+		} else {
+			html.classList.remove('light');
+		}
+		localStorage.setItem('clipbox_theme', theme);
+	}
+
+	btn?.addEventListener('click', () => {
+		const isLight = html.classList.contains('light');
+		applyTheme(isLight ? 'dark' : 'light');
+	});
+</script>
 
 <style>
 	.app-header {
@@ -19,10 +45,32 @@
 		padding-bottom: 1.5rem;
 	}
 
+	html.runtime-tauri .app-header {
+		padding-bottom: 1.15rem;
+		gap: 1rem;
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .app-header {
+		padding-bottom: 0.82rem;
+		border-bottom-color: rgba(255, 255, 255, 0.05);
+	}
+
+	html.light.runtime-tauri[data-desktop-platform='macos'] .app-header {
+		border-bottom-color: rgba(99, 102, 241, 0.08);
+	}
+
 	.logo-area {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+	}
+
+	html.runtime-tauri .logo-area {
+		gap: 0.85rem;
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .logo-area {
+		gap: 0.72rem;
 	}
 
 	.logo-icon {
@@ -36,6 +84,12 @@
 		box-shadow: 0 4px 20px var(--primary-glow, rgba(99, 102, 241, 0.3));
 	}
 
+	html.runtime-tauri[data-desktop-platform='macos'] .logo-icon {
+		padding: 0.68rem;
+		border-radius: 11px;
+		box-shadow: 0 8px 22px rgba(99, 102, 241, 0.2);
+	}
+
 	.app-header h1 {
 		font-family: var(--font-title, sans-serif);
 		font-size: 1.75rem;
@@ -47,9 +101,100 @@
 		letter-spacing: -0.02em;
 	}
 
+	html.runtime-tauri .app-header h1 {
+		font-size: 1.55rem;
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .app-header h1 {
+		font-size: 1.42rem;
+	}
+
+	html.light .app-header h1 {
+		background: linear-gradient(135deg, #1e1b4b 60%, #6366f1 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
 	.tagline {
 		color: var(--text-muted, #9ca3af);
 		font-size: 0.875rem;
 		margin: 0.25rem 0 0 0;
 	}
+
+	html.runtime-tauri .tagline {
+		max-width: 46ch;
+		font-size: 0.82rem;
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .tagline {
+		font-size: 0.8rem;
+		color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+	}
+
+	html.light.runtime-tauri[data-desktop-platform='macos'] .tagline {
+		color: color-mix(in srgb, var(--text-muted) 94%, transparent);
+	}
+
+	/* Theme toggle button */
+	.theme-toggle {
+		background: var(--bg-card, rgba(22, 24, 37, 0.7));
+		border: 1px solid var(--border-color);
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 0.55rem;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+		flex-shrink: 0;
+	}
+
+	.theme-toggle:hover {
+		background: var(--bg-hover);
+		border-color: var(--primary);
+		color: var(--primary);
+		transform: rotate(12deg);
+	}
+
+	html.runtime-tauri .theme-toggle:hover {
+		transform: rotate(8deg);
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .theme-toggle {
+		background: rgba(255, 255, 255, 0.03);
+		border-color: rgba(255, 255, 255, 0.06);
+	}
+
+	html.light.runtime-tauri[data-desktop-platform='macos'] .theme-toggle {
+		background: rgba(99, 102, 241, 0.04);
+		border-color: rgba(99, 102, 241, 0.08);
+	}
+
+	html.runtime-tauri[data-desktop-platform='macos'] .theme-toggle:hover {
+		transform: rotate(0deg);
+		background: rgba(255, 255, 255, 0.055);
+		border-color: rgba(255, 255, 255, 0.1);
+	}
+
+	@media (max-width: 720px) {
+		html.runtime-tauri .tagline {
+			display: none;
+		}
+
+		html.runtime-tauri .app-header {
+			padding-bottom: 0.95rem;
+		}
+
+		html.runtime-tauri .app-header h1 {
+			font-size: 1.35rem;
+		}
+	}
+
+	/* Show moon in dark, sun in light */
+	.icon-sun  { display: none; }
+	.icon-moon { display: block; }
+
+	html.light .icon-sun  { display: block; }
+	html.light .icon-moon { display: none; }
 </style>

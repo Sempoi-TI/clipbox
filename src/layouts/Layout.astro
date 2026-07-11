@@ -1,55 +1,392 @@
+---
+import clipboxIconUrl from '../assets/clipbox-icon.svg?url';
+import DesktopTitleBar from '../components/DesktopTitleBar.astro';
+---
+
 <!doctype html>
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='64' y2='64' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23bg)'/%3E%3Crect x='14' y='14' width='28' height='28' rx='5' ry='5' stroke='white' stroke-width='4' fill='none'/%3E%3Crect x='26' y='26' width='24' height='24' rx='5' ry='5' stroke='white' stroke-width='4' fill='url(%23bg)'/%3E%3C/svg%3E" />
+		<link rel="icon" type="image/svg+xml" href={clipboxIconUrl} />
 		<meta name="generator" content={Astro.generator} />
 		<title>ClipBox - Copy Text Fast</title>
+		<!-- Anti-flash: apply saved theme before first paint -->
+		<script is:inline>
+			(function() {
+				const saved = localStorage.getItem('clipbox_theme');
+				if (saved === 'light') document.documentElement.classList.add('light');
+			})();
+		</script>
+		<script>
+			import '../scripts/tauri-bridge';
+		</script>
 		<!-- Google Fonts: Plus Jakarta Sans & Inter -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 	</head>
 	<body>
-		<slot />
+		<div class="desktop-window-shell">
+			<DesktopTitleBar />
+			<div class="desktop-window-content">
+				<slot />
+			</div>
+		</div>
 	</body>
 </html>
 
 <style>
+	/* ── Dark theme (default) ── */
 	:root {
-		--bg-gradient: radial-gradient(circle at 50% 0%, #1a1b26 0%, #0f1016 100%);
+		--bg-gradient:    radial-gradient(circle at 50% 0%, #1a1b26 0%, #0f1016 100%);
+		--bg-page:        #0f1016;
+		--bg-card:        rgba(22, 24, 37, 0.7);
+		--bg-card-solid:  #14161f;
+		--bg-input:       rgba(15, 16, 22, 0.6);
+		--bg-hover:       rgba(255, 255, 255, 0.05);
+		--border-color:   rgba(255, 255, 255, 0.08);
+		--border-focus:   rgba(99, 102, 241, 0.5);
+		--text-primary:   #f3f4f6;
+		--text-secondary: #d1d5db;
+		--text-muted:     #9ca3af;
+		--text-faint:     rgba(255, 255, 255, 0.2);
+		--scrollbar-size: 10px;
+		--scrollbar-radius: 999px;
+		--scrollbar-track: rgba(255, 255, 255, 0.04);
+		--scrollbar-thumb: rgba(99, 102, 241, 0.28);
+		--scrollbar-hover: rgba(129, 140, 248, 0.52);
+		--preview-tooltip-bg: rgba(13, 18, 34, 0.94);
+		--preview-tooltip-border: rgba(99, 102, 241, 0.22);
+		--preview-tooltip-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+		--glass-bg:       rgba(22, 24, 37, 0.6);
+		--glass-border:   rgba(255, 255, 255, 0.08);
+		--primary:        #6366f1;
+		--primary-hover:  #4f46e5;
+		--primary-glow:   rgba(99, 102, 241, 0.3);
+		--desktop-titlebar-height: 56px;
+		--desktop-window-gap: 12px;
+		--desktop-window-radius: 24px;
+		--desktop-window-border: rgba(255, 255, 255, 0.08);
+		--desktop-window-shadow: 0 26px 60px rgba(0, 0, 0, 0.38);
+		--desktop-window-bg: color-mix(in srgb, var(--bg-card-solid) 86%, transparent);
+		--desktop-window-top-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 120px);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.18);
 		--font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 		--font-title: 'Plus Jakarta Sans', var(--font-sans);
 	}
 
-	html,
-	body {
+	/* ── Light theme ── */
+	html.light {
+		--bg-gradient:    radial-gradient(circle at 50% 0%, #eef0ff 0%, #f5f5fa 100%);
+		--bg-page:        #f5f5fa;
+		--bg-card:        rgba(255, 255, 255, 0.85);
+		--bg-card-solid:  #ffffff;
+		--bg-input:       rgba(255, 255, 255, 0.9);
+		--bg-hover:       rgba(99, 102, 241, 0.05);
+		--border-color:   rgba(0, 0, 0, 0.08);
+		--border-focus:   rgba(99, 102, 241, 0.4);
+		--text-primary:   #111827;
+		--text-secondary: #374151;
+		--text-muted:     #6b7280;
+		--text-faint:     rgba(0, 0, 0, 0.2);
+		--scrollbar-size: 10px;
+		--scrollbar-radius: 999px;
+		--scrollbar-track: rgba(99, 102, 241, 0.08);
+		--scrollbar-thumb: rgba(99, 102, 241, 0.24);
+		--scrollbar-hover: rgba(79, 70, 229, 0.42);
+		--preview-tooltip-bg: rgba(255, 255, 255, 0.96);
+		--preview-tooltip-border: rgba(99, 102, 241, 0.18);
+		--preview-tooltip-shadow: 0 16px 34px rgba(15, 23, 42, 0.12), 0 8px 20px rgba(99, 102, 241, 0.08);
+		--glass-bg:       rgba(255, 255, 255, 0.7);
+		--glass-border:   rgba(99, 102, 241, 0.15);
+		--primary:        #6366f1;
+		--primary-hover:  #4f46e5;
+		--primary-glow:   rgba(99, 102, 241, 0.2);
+		--desktop-window-border: rgba(99, 102, 241, 0.16);
+		--desktop-window-shadow: 0 24px 54px rgba(99, 102, 241, 0.12), 0 16px 34px rgba(15, 23, 42, 0.1);
+		--desktop-window-bg: color-mix(in srgb, var(--bg-card-solid) 90%, transparent);
+		--desktop-window-top-highlight: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0) 120px);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.16);
+	}
+
+	html, body {
 		margin: 0;
 		padding: 0;
 		width: 100%;
 		min-height: 100vh;
 		font-family: var(--font-sans);
 		background: var(--bg-gradient);
-		color: #f3f4f6;
+		color: var(--text-primary);
 		overflow-x: hidden;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+		transition: background 0.3s, color 0.3s;
+	}
+
+	body {
+		box-sizing: border-box;
+	}
+
+	:global(html.runtime-tauri body) {
+		padding: var(--desktop-window-gap);
+		min-height: 100vh;
+		overflow: hidden;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) {
+		--desktop-window-gap: 0px;
+		--desktop-window-radius: 14px;
+		--desktop-window-border: rgba(255, 255, 255, 0.04);
+		--desktop-window-shadow: none;
+		--desktop-window-active-ring: rgba(255, 255, 255, 0.06);
+		--desktop-titlebar-height: 52px;
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) {
+		--desktop-window-border: rgba(99, 102, 241, 0.08);
+		--desktop-window-active-ring: rgba(99, 102, 241, 0.08);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='windows']) {
+		--desktop-window-gap: 10px;
+		--desktop-window-radius: 22px;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='linux']) {
+		--desktop-window-gap: 10px;
+		--desktop-window-radius: 18px;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true'] body) {
+		padding: 0;
+	}
+
+	.desktop-window-shell {
+		min-height: 100vh;
+		position: relative;
+	}
+
+	.desktop-window-content {
+		min-height: 0;
+		position: relative;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell {
+		min-height: calc(100vh - (var(--desktop-window-gap) * 2));
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		border-radius: var(--desktop-window-radius);
+		border: 1px solid var(--desktop-window-border);
+		background: var(--desktop-window-bg);
+		box-shadow: var(--desktop-window-shadow);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		transition:
+			border-radius 240ms ease,
+			box-shadow 240ms ease,
+			border-color 220ms ease,
+			transform 220ms ease,
+			opacity 180ms ease;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell {
+		min-height: 100vh;
+		border: none;
+		box-shadow: none;
+		background: color-mix(in srgb, var(--bg-card-solid) 97%, transparent);
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell {
+		background: color-mix(in srgb, #ffffff 99%, transparent);
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::before,
+	:global(html.runtime-tauri) .desktop-window-shell::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		border-radius: inherit;
+		transition: opacity 220ms ease, transform 220ms ease;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::before {
+		border: 1px solid transparent;
+		opacity: 0;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.05),
+			0 0 0 1px var(--desktop-window-active-ring);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell::before,
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-shell::after {
+		opacity: 0;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-shell::after {
+		background:
+			radial-gradient(circle at top center, color-mix(in srgb, var(--primary) 14%, transparent), transparent 56%),
+			linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+			linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), transparent 42%);
+		opacity: 0.8;
+	}
+
+	:global(html.runtime-tauri) .desktop-window-content {
+		flex: 1;
+		min-height: 0;
+		overflow: auto;
+		background:
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 5%, transparent), transparent 100px);
+		transition: background 220ms ease, opacity 180ms ease;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 78px),
+			var(--desktop-window-top-highlight);
+	}
+
+	:global(html.runtime-tauri) .desktop-window-content::before {
+		content: '';
+		position: sticky;
+		top: 0;
+		display: block;
+		height: 1px;
+		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 26%, var(--border-color)), transparent);
+		opacity: 0.6;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .desktop-window-content::before {
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.075), transparent);
+		opacity: 0.45;
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos']) .desktop-window-content::before {
+		background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+		opacity: 0.38;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell {
+		min-height: 100vh;
+		border-radius: 0;
+		border: none;
+		box-shadow: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-window-shell {
+		border-color: color-mix(in srgb, var(--primary) 18%, var(--desktop-window-border));
+		transform: translateY(-1px);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-focused='true']) .desktop-window-shell {
+		transform: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='true']) .desktop-window-shell::before {
+		opacity: 1;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-shell {
+		opacity: 0.985;
+		transform: none;
+		box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-focused='false']) .desktop-window-shell {
+		box-shadow: none;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-shell::after {
+		opacity: 0.45;
+	}
+
+	:global(html.runtime-tauri[data-window-focused='false']) .desktop-window-content {
+		opacity: 0.97;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell {
+		background: color-mix(in srgb, var(--bg-card-solid) 92%, transparent);
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos'][data-window-maximized='false']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 72px),
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 92px);
+	}
+
+	:global(html.light.runtime-tauri[data-desktop-platform='macos'][data-window-maximized='false']) .desktop-window-content {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 78px),
+			var(--desktop-window-top-highlight),
+			linear-gradient(180deg, rgba(99, 102, 241, 0.035), transparent 96px);
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell::before,
+	:global(html.runtime-tauri[data-window-maximized='true']) .desktop-window-shell::after {
+		border-radius: 0;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(html.runtime-tauri) .desktop-window-shell,
+		:global(html.runtime-tauri) .desktop-window-shell::before,
+		:global(html.runtime-tauri) .desktop-window-shell::after,
+		:global(html.runtime-tauri) .desktop-window-content {
+			transition: none;
+		}
+	}
+
+	@media (max-width: 720px) {
+		:global(html.runtime-tauri) {
+			--desktop-titlebar-height: 54px;
+			--desktop-window-gap: 8px;
+			--desktop-window-radius: 18px;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:global(html.runtime-tauri) {
+			--desktop-titlebar-height: 50px;
+			--desktop-window-gap: 6px;
+			--desktop-window-radius: 16px;
+		}
 	}
 
 	/* Scrollbar styling */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+	}
+
 	::-webkit-scrollbar {
-		width: 8px;
-		height: 8px;
+		width: var(--scrollbar-size);
+		height: var(--scrollbar-size);
 	}
+
 	::-webkit-scrollbar-track {
-		background: #0f1016;
+		background: var(--scrollbar-track);
+		border-radius: var(--scrollbar-radius);
 	}
+
 	::-webkit-scrollbar-thumb {
-		background: #2d3142;
-		border-radius: 4px;
+		background: var(--scrollbar-thumb);
+		border-radius: var(--scrollbar-radius);
+		border: 2px solid transparent;
+		background-clip: padding-box;
 	}
+
 	::-webkit-scrollbar-thumb:hover {
-		background: #40455c;
+		background: var(--scrollbar-hover);
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+
+	::-webkit-scrollbar-corner {
+		background: transparent;
 	}
 </style>

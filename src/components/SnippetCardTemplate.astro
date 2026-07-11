@@ -3,6 +3,9 @@
 		<div class="card-header">
 			<span class="category-badge"></span>
 			<div class="card-header-actions">
+				<button class="pin-btn" title="Pin snippet">
+					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+				</button>
 				<button class="copy-btn" title="Copy text">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
 				</button>
@@ -13,7 +16,7 @@
 					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
 				</button>
 				<button class="delete-btn" title="Delete">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
 				</button>
 			</div>
 		</div>
@@ -26,22 +29,23 @@
 </template>
 
 <style is:global>
-	/* Snippet Card and styling details that need to be globally visible when cloned */
+	/* Snippet Card */
 	.snippet-card {
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 		padding: 1.25rem;
 		min-height: 50px;
-		background: rgba(20, 22, 34, 0.4);
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-		transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s;
+		background: var(--bg-card);
+		border-radius: 16px;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+		transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, border-color 0.2s, background 0.3s;
 	}
 
 	.snippet-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
-		border-color: rgba(99, 102, 241, 0.2) !important;
+		box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+		border-color: rgba(99, 102, 241, 0.25) !important;
 	}
 
 	.card-header {
@@ -59,128 +63,22 @@
 		border-radius: 6px;
 	}
 
-	.badge-all {
-		background: rgba(99, 102, 241, 0.1);
-		color: #a5b4fc;
-		border: 1px solid rgba(99, 102, 241, 0.2);
-	}
+	.badge-all   { background: rgba(99,102,241,0.1);  color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+	.badge-code  { background: rgba(168,85,247,0.1);  color: #d8b4fe; border: 1px solid rgba(168,85,247,0.2); }
+	.badge-link  { background: rgba(14,165,233,0.1);  color: #7dd3fc; border: 1px solid rgba(14,165,233,0.2); }
+	.badge-note  { background: rgba(245,158,11,0.1);  color: #fde047; border: 1px solid rgba(245,158,11,0.2); }
+	.badge-core  { background: rgba(16,185,129,0.1);  color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+	.badge-devs  { background: rgba(236,72,153,0.1);  color: #ec4899; border: 1px solid rgba(236,72,153,0.2); }
+	.badge-qes   { background: rgba(139,92,246,0.1);  color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+	.badge-aks   { background: rgba(34,197,94,0.1);   color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
 
-	.badge-code {
-		background: rgba(168, 85, 247, 0.1);
-		color: #d8b4fe;
-		border: 1px solid rgba(168, 85, 247, 0.2);
-	}
+	/* Card action buttons — shared base */
+	.card-header-actions { display: flex; align-items: center; gap: 0.35rem; }
 
-	.badge-link {
-		background: rgba(14, 165, 233, 0.1);
-		color: #7dd3fc;
-		border: 1px solid rgba(14, 165, 233, 0.2);
-	}
-
-	.badge-note {
-		background: rgba(245, 158, 11, 0.1);
-		color: #fde047;
-		border: 1px solid rgba(245, 158, 11, 0.2);
-	}
-
-  .badge-core {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-  }
-
-  .badge-devs {
-    background: rgba(236, 72, 153, 0.1);
-    color: #ec4899;
-    border: 1px solid rgba(236, 72, 153, 0.2);
-  }
-
-  .badge-qes {
-    background: rgba(139, 92, 246, 0.1);
-    color: #8b5cf6;
-    border: 1px solid rgba(139, 92, 246, 0.2);
-  }
-
-  .badge-aks {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.2);
-  }
-
-	/* Card Header Actions Wrapper */
-	.card-header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	/* Copy Button */
-	.copy-btn {
+	.copy-btn, .delete-btn, .edit-btn, .pin-btn, .open-link-btn {
 		background: transparent;
 		border: none;
-		color: rgba(255, 255, 255, 0.2);
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 6px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s;
-	}
-
-	.copy-btn:hover {
-		color: var(--accent-success, #10b981);
-		background: rgba(16, 185, 129, 0.1);
-	}
-
-	.copy-btn.copied {
-		color: var(--accent-success, #10b981) !important;
-		background: rgba(16, 185, 129, 0.2) !important;
-	}
-
-	/* Delete Button */
-	.delete-btn {
-		background: transparent;
-		border: none;
-		color: rgba(255, 255, 255, 0.2);
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 6px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s;
-	}
-
-	.delete-btn:hover {
-		color: var(--accent-error, #ef4444);
-		background: rgba(239, 68, 68, 0.1);
-	}
-
-	/* Edit Button */
-	.edit-btn {
-		background: transparent;
-		border: none;
-		color: rgba(255, 255, 255, 0.2);
-		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 6px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s;
-	}
-
-	.edit-btn:hover {
-		color: var(--accent-info, #0ea5e9);
-		background: rgba(14, 165, 233, 0.1);
-	}
-
-	/* Open Link Button */
-	.open-link-btn {
-		background: transparent;
-		border: none;
-		color: rgba(255, 255, 255, 0.2);
+		color: var(--text-faint);
 		cursor: pointer;
 		padding: 0.25rem;
 		border-radius: 6px;
@@ -192,14 +90,19 @@
 		line-height: 0;
 	}
 
-	.open-link-btn:hover {
-		color: #7dd3fc;
-		background: rgba(14, 165, 233, 0.1);
-	}
+	.copy-btn:hover        { color: #10b981; background: rgba(16,185,129,0.1); }
+	.copy-btn.copied       { color: #10b981 !important; background: rgba(16,185,129,0.2) !important; }
+	.delete-btn:hover      { color: #ef4444; background: rgba(239,68,68,0.1); }
+	.edit-btn:hover        { color: #0ea5e9; background: rgba(14,165,233,0.1); }
+	.open-link-btn:hover   { color: #7dd3fc; background: rgba(14,165,233,0.1); }
+	.open-link-btn[hidden] { display: none; }
 
-	.open-link-btn[hidden] {
-		display: none;
-	}
+	.pin-btn:hover     { color: #fbbf24; background: rgba(251,191,36,0.1); }
+	.pin-btn.pinned    { color: #fbbf24; }
+	.pin-btn.pinned svg { fill: #fbbf24; stroke: #fbbf24; }
+
+	.snippet-card.is-pinned       { border-color: rgba(251,191,36,0.3) !important; background: rgba(251,191,36,0.04) !important; }
+	.snippet-card.is-pinned:hover { border-color: rgba(251,191,36,0.5) !important; }
 
 	.card-body {
 		flex-grow: 1;
@@ -210,7 +113,7 @@
 	.snippet-description {
 		margin: 0 0 0.5rem 0;
 		font-size: 0.8rem;
-		color: var(--text-muted, #9ca3af);
+		color: var(--text-muted);
 		font-weight: 500;
 		line-height: 1.4;
 	}
@@ -223,7 +126,7 @@
 		font-family: 'Fira Code', 'Courier New', Courier, monospace;
 		font-size: 0.9rem;
 		line-height: 1.5;
-		color: #e4e4e7;
+		color: var(--text-secondary);
 		max-height: 120px;
 		overflow-y: auto;
 	}
@@ -235,19 +138,17 @@
 		gap: 0.5rem;
 		margin-top: 0.625rem;
 		padding-top: 0.5rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.05);
+		border-top: 1px solid var(--border-color);
 	}
 
-	.snippet-tags:empty {
-		display: none;
-	}
+	.snippet-tags:empty { display: none; }
 
 	.tag-chip {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2rem;
-		background: rgba(99, 102, 241, 0.06);
-		border: 1px solid rgba(99, 102, 241, 0.30);
+		background: rgba(99,102,241,0.06);
+		border: 1px solid rgba(99,102,241,0.30);
 		color: #8b9cf4;
 		font-size: 0.62rem;
 		font-weight: 700;
@@ -258,9 +159,108 @@
 		transition: background 0.15s, border-color 0.15s;
 	}
 
-	.tag-chip::before {
-		content: '#';
-		opacity: 0.55;
-		font-size: 0.58rem;
+	.tag-chip::before { content: '#'; opacity: 0.55; font-size: 0.58rem; }
+
+	/* ── List view ── */
+	/* Applied when #snippets-container has .view-list */
+
+	.view-list .snippet-card {
+		flex-direction: row;
+		align-items: center;
+		padding: 0.6rem 1rem;
+		min-height: unset;
+		gap: 0.75rem;
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		overflow: hidden;
+	}
+
+	.view-list .snippet-card:hover {
+		transform: none;
+	}
+
+	/* Badge — fixed width, no shrink */
+	.view-list .category-badge {
+		flex-shrink: 0;
+		width: 80px;
+		text-align: center;
+		font-size: 0.65rem;
+	}
+
+	/* Card body takes all remaining space, single line */
+	.view-list .card-body {
+		flex: 1 1 0;
+		min-width: 0;
+		margin-bottom: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		overflow: hidden;
+	}
+
+	.view-list .card-body > * {
+		min-width: 0;
+	}
+
+	/* Hide description in list mode — text is enough */
+	.view-list .snippet-description { display: none !important; }
+
+	/* Single-line truncated text */
+	.view-list .snippet-content {
+		flex: 1 1 0;
+		min-width: 0;
+		display: block;
+		max-height: unset;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		word-break: normal;
+		font-size: 0.82rem;
+	}
+
+	.view-list .snippet-content code {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Tags inline, no wrap, scrollable */
+	.view-list .snippet-tags {
+		flex-shrink: 0;
+		min-width: 0;
+		flex-wrap: nowrap;
+		overflow: hidden;
+		max-width: 180px;
+		margin-top: 0;
+		padding-top: 0;
+		border-top: none;
+		gap: 0.3rem;
+	}
+
+	/* Card header becomes a fixed-width actions bar */
+	.view-list .card-header {
+		flex-shrink: 0;
+		margin-bottom: 0;
+		order: 1; /* move actions to the right */
+		min-width: fit-content;
+	}
+
+	.view-list .card-header-actions {
+		flex-wrap: nowrap;
+	}
+
+	/* Hide the badge from card-header — shown separately */
+	.view-list .card-header .category-badge { display: none; }
+
+	/* Re-order: badge | body | actions */
+	.view-list .snippet-card { flex-direction: row; }
+
+	/* Container switches from grid to single column */
+	.snippets-container-inner.view-list,
+	#snippets-container.view-list {
+		grid-template-columns: 1fr;
+		gap: 0.4rem;
 	}
 </style>

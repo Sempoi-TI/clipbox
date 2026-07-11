@@ -33,6 +33,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 		<!-- Toast Container -->
 		<div class="toast-container" id="toast-container"></div>
+		<div class="snippet-preview-tooltip" id="snippet-preview-tooltip" aria-hidden="true"></div>
 		
 		<!-- Edit Modal -->
 		<div class="modal-backdrop" id="edit-modal" aria-hidden="true">
@@ -80,6 +81,29 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			</div>
 		</div>
 
+		<!-- Variables Copy Modal -->
+		<div class="modal-backdrop" id="variables-modal" aria-hidden="true">
+			<div class="modal-box glass-card modal-box-compact">
+				<div class="modal-header">
+					<h2>Completar variables</h2>
+					<button class="modal-close-btn" id="variables-modal-close-btn" title="Close">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+					</button>
+				</div>
+				<form id="variables-form" class="snippet-form">
+					<p class="variables-modal-copy">Rellena los valores para generar el texto final antes de copiarlo.</p>
+					<div class="variables-fields" id="variables-fields"></div>
+					<div class="modal-actions">
+						<button type="button" class="btn btn-cancel" id="variables-modal-cancel-btn">Cancelar</button>
+						<button type="submit" class="btn btn-save">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+							Copiar texto
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
 		<!-- Snippet Card HTML Template -->
 		<SnippetCardTemplate />
 	</main>
@@ -91,16 +115,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	// Model representing a text snippet
 	
-	const DEFAULT_DATASET_FILE = '/snippets.json';
+	const DEFAULT_DATASET_FILE = '/snippets-apti.json';
 	let selectedDatasetKey = 'default';
-	let selectedDatasetFriendlyName = 'snippets.json';
+	let selectedDatasetFriendlyName = 'snippets-apti.json';
   let sortOrderAscending = true;
 
   // State
 	let snippets= [];
 	let currentFilter = 'all';
 	let searchQuery = '';
+	let pinnedIds = new Set(); // IDs of pinned snippets (persisted separately)
+	let viewMode = 'grid'; // 'grid' | 'list'
 	let currentTags= []; // tags being built in the form
+	let persistedState = createEmptyPersistedState();
 
 	// DOM Elements
 	let form= null;
@@ -197,12 +224,178 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		return 'clipbox_dataset_metadata';
 	}
 
-	function saveDatasetMetadata() {
-		const metadata = {
+	function createEmptyPersistedState() {
+		return {
+			version: 1,
+			datasetMetadata: null,
+			datasets: {},
+			pinnedIds: [],
+			viewMode: 'grid'
+		};
+	}
+
+	function cloneJson(value) {
+		return JSON.parse(JSON.stringify(value));
+	}
+
+	function normalizePersistedState(raw) {
+		const normalized = createEmptyPersistedState();
+		if (!raw || typeof raw !== 'object') {
+			return normalized;
+		}
+
+		if (raw.datasetMetadata && typeof raw.datasetMetadata === 'object') {
+			const datasetKey = typeof raw.datasetMetadata.selectedDatasetKey === 'string' ? raw.datasetMetadata.selectedDatasetKey : null;
+			if (datasetKey) {
+				normalized.datasetMetadata = {
+					selectedDatasetKey: datasetKey,
+					selectedDatasetFriendlyName: typeof raw.datasetMetadata.selectedDatasetFriendlyName === 'string'
+						? raw.datasetMetadata.selectedDatasetFriendlyName
+						: datasetKey.replace(/^custom_/, '')
+				};
+			}
+		}
+
+		if (raw.datasets && typeof raw.datasets === 'object') {
+			for (const [datasetKey, datasetValue] of Object.entries(raw.datasets)) {
+				if (Array.isArray(datasetValue)) {
+					normalized.datasets[datasetKey] = cloneJson(datasetValue);
+				}
+			}
+		}
+
+		if (Array.isArray(raw.pinnedIds)) {
+			normalized.pinnedIds = raw.pinnedIds.map((id) => String(id));
+		}
+
+		if (raw.viewMode === 'list' || raw.viewMode === 'grid') {
+			normalized.viewMode = raw.viewMode;
+		}
+
+		return normalized;
+	}
+
+	function hasPersistedData(state) {
+		return Boolean(
+			(state.datasetMetadata && state.datasetMetadata.selectedDatasetKey)
+			|| Object.keys(state.datasets).length
+			|| state.pinnedIds.length
+			|| state.viewMode === 'list'
+		);
+	}
+
+	function loadPersistedStateFromLocalStorage() {
+		const state = createEmptyPersistedState();
+
+		try {
+			const metadata = localStorage.getItem(getDatasetMetadataKey());
+			if (metadata) {
+				state.datasetMetadata = JSON.parse(metadata);
+			}
+		} catch (error) {
+			console.warn('Unable to read dataset metadata from localStorage.', error);
+		}
+
+		try {
+			const rawPins = localStorage.getItem('clipbox_pinned_ids');
+			if (rawPins) {
+				state.pinnedIds = JSON.parse(rawPins).map((id) => String(id));
+			}
+		} catch (error) {
+			console.warn('Unable to read pinned snippets from localStorage.', error);
+		}
+
+		const storedViewMode = localStorage.getItem('clipbox_view_mode');
+		if (storedViewMode === 'list' || storedViewMode === 'grid') {
+			state.viewMode = storedViewMode;
+		}
+
+		for (let index = 0; index < localStorage.length; index += 1) {
+			const key = localStorage.key(index);
+			if (!key || !key.startsWith('clipbox_snippets_')) continue;
+			try {
+				const dataset = JSON.parse(localStorage.getItem(key) || 'null');
+				if (Array.isArray(dataset)) {
+					state.datasets[key.replace('clipbox_snippets_', '')] = dataset;
+				}
+			} catch (error) {
+				console.warn(`Unable to read dataset ${key} from localStorage.`, error);
+			}
+		}
+
+		return normalizePersistedState(state);
+	}
+
+	function savePersistedStateToLocalStorage() {
+		if (persistedState.datasetMetadata) {
+			localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(persistedState.datasetMetadata));
+		} else {
+			localStorage.removeItem(getDatasetMetadataKey());
+		}
+
+		localStorage.setItem('clipbox_pinned_ids', JSON.stringify(persistedState.pinnedIds));
+		localStorage.setItem('clipbox_view_mode', persistedState.viewMode);
+
+		for (const [datasetKey, datasetValue] of Object.entries(persistedState.datasets)) {
+			localStorage.setItem(getDatasetStorageKey(datasetKey), JSON.stringify(datasetValue));
+		}
+	}
+
+	async function savePersistedState() {
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.saveStorage === 'function') {
+			await desktopBridge.saveStorage(persistedState);
+			return;
+		}
+
+		savePersistedStateToLocalStorage();
+	}
+
+	async function hydratePersistedState() {
+		const legacyState = loadPersistedStateFromLocalStorage();
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.loadStorage === 'function') {
+			try {
+				const loadedState = normalizePersistedState(await desktopBridge.loadStorage());
+				if (!hasPersistedData(loadedState) && hasPersistedData(legacyState)) {
+					persistedState = legacyState;
+					await savePersistedState();
+					return;
+				}
+
+				persistedState = loadedState;
+				return;
+			} catch (error) {
+				console.error('Unable to load desktop JSON storage, falling back to localStorage.', error);
+			}
+		}
+
+		persistedState = legacyState;
+	}
+
+	function syncDatasetMetadataToState() {
+		persistedState.datasetMetadata = {
 			selectedDatasetFriendlyName,
 			selectedDatasetKey
 		};
-		localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(metadata));
+	}
+
+	async function saveDatasetMetadata() {
+		syncDatasetMetadataToState();
+		await savePersistedState();
+	}
+
+	function getPersistedDataset(datasetKey) {
+		const dataset = persistedState.datasets[datasetKey];
+		return Array.isArray(dataset) ? cloneJson(dataset) : null;
+	}
+
+	function getDesktopBridge() {
+		return window.__CLIPBOX_DESKTOP__;
+	}
+
+	function isDesktopRuntime() {
+		return Boolean(getDesktopBridge()?.isTauri);
 	}
 
 	function updateDatasetDisplayName(name) {
@@ -212,27 +405,78 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 	}
 
+	async function persistCurrentDataset() {
+		persistedState.datasets[selectedDatasetKey] = cloneJson(snippets);
+		syncDatasetMetadataToState();
+		await savePersistedState();
+	}
+
+	async function readFileAsText(file) {
+		if (typeof file.text === 'function') {
+			return file.text();
+		}
+
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(String(reader.result || ''));
+			reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+			reader.readAsText(file);
+		});
+	}
+
+	async function writeTextToClipboard(text) {
+		const desktopBridge = window.__CLIPBOX_DESKTOP__;
+		if (desktopBridge?.isTauri && typeof desktopBridge.writeClipboardText === 'function') {
+			try {
+				await desktopBridge.writeClipboardText(text);
+				return;
+			} catch (error) {
+				console.warn('Native Tauri clipboard unavailable, using web clipboard fallback.', error);
+			}
+		}
+
+		if (navigator.clipboard?.writeText) {
+			try {
+				await navigator.clipboard.writeText(text);
+				return;
+			} catch (error) {
+				console.warn('Clipboard API unavailable, using fallback copy command.', error);
+			}
+		}
+
+		const helper = document.createElement('textarea');
+		helper.value = text;
+		helper.setAttribute('readonly', 'true');
+		helper.style.position = 'fixed';
+		helper.style.opacity = '0';
+		helper.style.pointerEvents = 'none';
+		document.body.appendChild(helper);
+		helper.select();
+		helper.setSelectionRange(0, helper.value.length);
+
+		const successful = document.execCommand('copy');
+		document.body.removeChild(helper);
+		if (!successful) {
+			throw new Error('Clipboard copy command failed');
+		}
+	}
+
 	async function loadDefaultSnippets() {
 		selectedDatasetKey = 'default';
 		updateDatasetDisplayName(DEFAULT_DATASET_FILE.split('/').pop() || 'snippets.json');
 
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
-		const stored = localStorage.getItem(storageKey);
-		if (stored) {
-			try {
-				snippets = JSON.parse(stored);
-				saveDatasetMetadata();
-				return;
-			} catch (e) {
-				console.warn('Invalid stored snippets for default dataset, reloading file version.');
-			}
+		const storedDataset = getPersistedDataset(selectedDatasetKey);
+		if (storedDataset) {
+			snippets = storedDataset;
+			await saveDatasetMetadata();
+			return;
 		}
 
 		try {
 			const response = await fetch(DEFAULT_DATASET_FILE);
 			if (response.ok) {
 				snippets = await response.json();
-				saveDatasetMetadata();
+				persistCurrentDataset();
 				return;
 			}
 			console.warn('Unable to load default snippets from', DEFAULT_DATASET_FILE);
@@ -241,22 +485,26 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 
 		snippets = [];
-		saveDatasetMetadata();
+		await saveDatasetMetadata();
 	}
 
 	async function loadCustomSnippetsFromFile(file) {
 		if (!file) return;
-		const text = await file.text();
+		const text = await readFileAsText(file);
+		await loadCustomSnippetsFromText(text, file.name);
+	}
+
+	async function loadCustomSnippetsFromText(text, fileName) {
 		try {
 			const parsed = JSON.parse(text);
 			if (!Array.isArray(parsed)) {
 				throw new Error('JSON file must contain an array of snippets');
 			}
 			snippets = parsed;
-			selectedDatasetKey = `custom_${file.name}`;
-			updateDatasetDisplayName(file.name);
-			saveSnippets();
-			showToast(`Loaded ${file.name}`, 'success');
+			selectedDatasetKey = `custom_${fileName}`;
+			updateDatasetDisplayName(fileName);
+			await saveSnippets();
+			showToast(`Loaded ${fileName}`, 'success');
 		} catch (e) {
 			console.error('Error loading custom snippet file:', e);
 			showToast('Invalid JSON file selected', 'error');
@@ -264,31 +512,93 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	function saveSnippets() {
-		const storageKey = "clipbox_snippets";
-		localStorage.setItem(storageKey, JSON.stringify(snippets));
-		saveDatasetMetadata();
+		return persistCurrentDataset().catch((error) => {
+			console.error('Unable to persist snippets.', error);
+			showToast('Failed to save snippets locally', 'error');
+		});
+	}
+
+	// ---- Pin persistence (independent of dataset) ----
+	function loadPins() {
+		pinnedIds = new Set((persistedState.pinnedIds || []).map((id) => String(id)));
+	}
+
+	function savePins() {
+		persistedState.pinnedIds = [...pinnedIds].map((id) => String(id));
+		return savePersistedState().catch((error) => {
+			console.error('Unable to persist pinned snippets.', error);
+			showToast('Failed to save pinned snippets locally', 'error');
+		});
+	}
+
+	function togglePin(id) {
+		if (pinnedIds.has(id)) {
+			pinnedIds.delete(id);
+			showToast('Snippet unpinned', 'info');
+		} else {
+			pinnedIds.add(id);
+			showToast('Snippet pinned!', 'success');
+		}
+		void savePins();
+		renderSnippets();
+	}
+
+	// ---- View mode (grid / list) ----
+	const VIEW_ICON_GRID = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`;
+	const VIEW_ICON_LIST = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+
+	function loadViewMode() {
+		viewMode = persistedState.viewMode === 'list' ? 'list' : 'grid';
+		applyViewMode();
+	}
+
+	function applyViewMode() {
+		if (!snippetsContainer) return;
+		snippetsContainer.classList.toggle('view-list', viewMode === 'list');
+
+		const btn = document.getElementById('view-toggle-btn');
+		if (btn) {
+			const isListView = viewMode === 'list';
+			btn.classList.toggle('is-list', isListView);
+			btn.setAttribute('title', isListView ? 'Cambiar a vista de grilla' : 'Cambiar a vista de lista');
+			btn.setAttribute('aria-label', isListView ? 'Cambiar a vista de grilla' : 'Cambiar a vista de lista');
+			const icon = document.getElementById('view-toggle-icon');
+			if (icon) icon.innerHTML = isListView ? VIEW_ICON_GRID : VIEW_ICON_LIST;
+		}
+	}
+
+	function wireViewToggle() {
+		const btn = document.getElementById('view-toggle-btn');
+		if (!btn) return;
+		btn.addEventListener('click', () => {
+			viewMode = viewMode === 'grid' ? 'list' : 'grid';
+			persistedState.viewMode = viewMode;
+			void savePersistedState().catch((error) => {
+				console.error('Unable to persist view mode.', error);
+				showToast('Failed to save view mode locally', 'error');
+			});
+			applyViewMode();
+		});
 	}
 
 	async function loadSnippetsFromMetadata() {
-		const metadata = localStorage.getItem(getDatasetMetadataKey());
+		const metadata = persistedState.datasetMetadata;
 		if (!metadata) {
 			await loadDefaultSnippets();
 			return;
 		}
 
 		try {
-			const parsed = JSON.parse(metadata);
-			if (parsed?.selectedDatasetKey === 'default') {
+			if (metadata.selectedDatasetKey === 'default') {
 				await loadDefaultSnippets();
 				return;
 			}
 
-			const storageKey = getDatasetStorageKey(parsed.selectedDatasetKey || 'default');
-			const stored = localStorage.getItem(storageKey);
+			const stored = getPersistedDataset(metadata.selectedDatasetKey || 'default');
 			if (stored) {
-				snippets = JSON.parse(stored);
-				selectedDatasetKey = parsed.selectedDatasetKey;
-				updateDatasetDisplayName(parsed.selectedDatasetFriendlyName || parsed.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
+				snippets = stored;
+				selectedDatasetKey = metadata.selectedDatasetKey;
+				updateDatasetDisplayName(metadata.selectedDatasetFriendlyName || metadata.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
 				return;
 			}
 		} catch (e) {
@@ -298,11 +608,32 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		await loadDefaultSnippets();
 	}
 
+	async function openDatasetFromNativeDialog() {
+		const desktopBridge = getDesktopBridge();
+		if (!desktopBridge?.isTauri) return false;
+
+		try {
+			const selectedPath = await desktopBridge.openJsonFile();
+			if (!selectedPath) return true;
+
+			const text = await desktopBridge.readTextFile(selectedPath);
+			const fileName = selectedPath.split(/[\\/]/).pop() || 'dataset.json';
+			await loadCustomSnippetsFromText(text, fileName);
+			renderSnippets();
+		} catch (error) {
+			console.error('Error loading dataset from native dialog:', error);
+			showToast('Failed to open JSON file', 'error');
+		}
+
+		return true;
+	}
+
 	function wireDatasetFileChooser() {
 		if (!fileInput) return;
 
 		if (fileButton) {
-			fileButton.addEventListener('click', () => {
+			fileButton.addEventListener('click', async () => {
+				if (await openDatasetFromNativeDialog()) return;
 				if (fileInput) fileInput.click();
 			});
 		}
@@ -317,26 +648,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	function wireExportButton() {
 		if (!exportButton) return;
-		exportButton.addEventListener('click', exportSnippetsToClipboard);
+		exportButton.addEventListener('click', exportSnippetsToFile);
 	}
 
 	async function exportSnippetsToClipboard() {
 		try {
-			const storageKey = 'clipbox_snippets';
-			const raw = localStorage.getItem(storageKey);
-			if (!raw) {
-				showToast('No snippets found in localStorage for default dataset', 'error');
-				return;
-			}
-
-			const parsed = JSON.parse(raw);
-			if (!Array.isArray(parsed)) {
-				showToast('Default snippets data is invalid', 'error');
+			const parsed = getPersistedDataset(selectedDatasetKey) || cloneJson(snippets);
+			if (!Array.isArray(parsed) || parsed.length === 0) {
+				showToast('No snippets found for current dataset', 'error');
 				return;
 			}
 
 			const exportText = JSON.stringify(parsed, null, 2);
-			await navigator.clipboard.writeText(exportText);
+			await writeTextToClipboard(exportText);
 			showToast(`Exported ${parsed.length} default snippets to clipboard!`, 'success');
 		} catch (err) {
 			console.error('Export failed', err);
@@ -344,11 +668,44 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 	}
 
+	async function exportSnippetsToFile() {
+		const parsed = getPersistedDataset(selectedDatasetKey) || cloneJson(snippets);
+		if (!Array.isArray(parsed) || parsed.length === 0) {
+			showToast('No snippets found for current dataset', 'error');
+			return;
+		}
+
+		const desktopBridge = getDesktopBridge();
+		if (!desktopBridge?.isTauri) {
+			await exportSnippetsToClipboard();
+			return;
+		}
+
+		try {
+			const safeName = (selectedDatasetFriendlyName || 'clipbox-snippets.json').replace(/\.[^.]+$/, '') || 'clipbox-snippets';
+			const savePath = await desktopBridge.saveJsonFile(`${safeName}.json`);
+			if (!savePath) return;
+
+			await desktopBridge.writeTextFile(savePath, JSON.stringify(parsed, null, 2));
+			showToast(`Exported ${parsed.length} snippets to JSON file`, 'success');
+		} catch (error) {
+			console.error('Export file failed', error);
+			showToast('Failed to export JSON file', 'error');
+		}
+	}
+
 	async function init() {
 		initDomElements();
+		await hydratePersistedState();
+		if (isDesktopRuntime() && fileInput) {
+			fileInput.disabled = true;
+		}
+		loadPins();
+		loadViewMode();
 		await loadSnippetsFromMetadata();
 		wireDatasetFileChooser();
 		wireExportButton();
+		wireViewToggle();
 		renderSnippets();
 	}
 
@@ -390,7 +747,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	// Copy to clipboard with animation feedback
 	async function copyToClipboard(text, button) {
 		try {
-			await navigator.clipboard.writeText(text);
+			await writeTextToClipboard(text);
 			
 			// Visual feedback in button
 			const originalHTML = button.innerHTML;
@@ -399,7 +756,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 			`;
 
-			showToast('Text copied to clipboard!');
+			showToast('Text copied to clipboard!', 'success');
 
 			setTimeout(() => {
 				button.classList.remove('copied');
@@ -408,6 +765,99 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		} catch (err) {
 			showToast('Error to copy text', 'error');
 		}
+	}
+
+	const SNIPPET_VARIABLE_REGEX = /\{\{\s*([^{}]+?)\s*\}\}/g;
+
+	function extractSnippetVariables(text) {
+		const variables = [];
+		const seen = new Set();
+		for (const match of text.matchAll(SNIPPET_VARIABLE_REGEX)) {
+			const name = match[1].trim();
+			if (!name || seen.has(name)) continue;
+			seen.add(name);
+			variables.push(name);
+		}
+		return variables;
+	}
+
+	function resolveSnippetVariables(text, values) {
+		return text.replace(SNIPPET_VARIABLE_REGEX, (_, rawName) => {
+			const name = rawName.trim();
+			return Object.prototype.hasOwnProperty.call(values, name) ? values[name] : '';
+		});
+	}
+
+	const variablesModal = document.getElementById('variables-modal');
+	const variablesForm = document.getElementById('variables-form');
+	const variablesFields = document.getElementById('variables-fields');
+	const variablesModalCloseBtn = document.getElementById('variables-modal-close-btn');
+	const variablesModalCancelBtn = document.getElementById('variables-modal-cancel-btn');
+
+	let pendingCopyButton = null;
+	let pendingCopyText = '';
+
+	function closeVariablesModal() {
+		if (!variablesModal || !variablesFields) return;
+		variablesModal.classList.remove('open');
+		variablesModal.setAttribute('aria-hidden', 'true');
+		variablesFields.innerHTML = '';
+		pendingCopyButton = null;
+		pendingCopyText = '';
+	}
+
+	function openVariablesModal(text, button) {
+		if (!variablesModal || !variablesFields) {
+			copyToClipboard(text, button);
+			return;
+		}
+
+		const variables = extractSnippetVariables(text);
+		if (variables.length === 0) {
+			copyToClipboard(text, button);
+			return;
+		}
+
+		pendingCopyButton = button;
+		pendingCopyText = text;
+		variablesFields.innerHTML = '';
+
+		variables.forEach((name) => {
+			const field = document.createElement('div');
+			field.className = 'form-group variables-field';
+
+			const label = document.createElement('label');
+			label.className = 'variables-label';
+			const inputId = `variable-input-${name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}`;
+			label.setAttribute('for', inputId);
+			label.textContent = name;
+
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.id = inputId;
+			input.name = name;
+			input.className = 'variables-input';
+			input.placeholder = `Valor para ${name}`;
+			input.autocomplete = 'off';
+			input.required = true;
+
+			field.appendChild(label);
+			field.appendChild(input);
+			variablesFields.appendChild(field);
+		});
+
+		variablesModal.classList.add('open');
+		variablesModal.setAttribute('aria-hidden', 'false');
+		setTimeout(() => variablesFields.querySelector('input')?.focus(), 50);
+	}
+
+	async function handleSnippetCopy(text, button) {
+		const variables = extractSnippetVariables(text);
+		if (variables.length === 0) {
+			await copyToClipboard(text, button);
+			return;
+		}
+		openVariablesModal(text, button);
 	}
 
 	// Delete a snippet
@@ -503,7 +953,41 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	document.getElementById('modal-close-btn')?.addEventListener('click', closeEditModal);
 	document.getElementById('modal-cancel-btn')?.addEventListener('click', closeEditModal);
 	editModal?.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
-	document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEditModal(); });
+	variablesModalCloseBtn?.addEventListener('click', closeVariablesModal);
+	variablesModalCancelBtn?.addEventListener('click', closeVariablesModal);
+	variablesModal?.addEventListener('click', (e) => { if (e.target === variablesModal) closeVariablesModal(); });
+	document.addEventListener('keydown', (e) => {
+		if (e.key !== 'Escape') return;
+		if (variablesModal?.classList.contains('open')) {
+			closeVariablesModal();
+			return;
+		}
+		closeEditModal();
+	});
+
+	if (variablesForm) {
+		variablesForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!pendingCopyText || !pendingCopyButton) return;
+
+			const values = {};
+			const formData = new FormData(variablesForm);
+			for (const [key, value] of formData.entries()) {
+				values[key] = String(value).trim();
+			}
+
+			const missingValue = Object.values(values).some(value => value === '');
+			if (missingValue) {
+				showToast('Completa todas las variables antes de copiar', 'error');
+				return;
+			}
+
+			const resolvedText = resolveSnippetVariables(pendingCopyText, values);
+			const button = pendingCopyButton;
+			closeVariablesModal();
+			await copyToClipboard(resolvedText, button);
+		});
+	}
 
 	if (editForm) {
 		editForm.addEventListener('submit', (e) => {
@@ -516,7 +1000,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				addEditTag(editTagsInput.value);
 				editTagsInput.value = '';
 			}
-			const idx = snippets.findIndex(s => s.id === id);
+			const idx = snippets.findIndex(s => String(s.id) === id);
 			if (idx !== -1) {
 				snippets[idx] = {
 					...snippets[idx],
@@ -579,6 +1063,75 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		return snippet.category === 'Link' && getSnippetUrl(snippet.text) !== null;
 	}
 
+	const snippetPreviewTooltip = document.getElementById('snippet-preview-tooltip');
+	let activePreviewAnchor = null;
+
+	function isSnippetContentTruncated(element) {
+		if (!element) return false;
+		const codeElement = element.querySelector('code');
+		const verticalOverflow = element.scrollHeight - element.clientHeight > 1;
+		const horizontalOverflow = element.scrollWidth - element.clientWidth > 1;
+		const nestedHorizontalOverflow = codeElement
+			? (codeElement.scrollWidth - codeElement.clientWidth > 1) || (codeElement.scrollWidth - element.clientWidth > 1)
+			: false;
+		const nestedVerticalOverflow = codeElement
+			? (codeElement.scrollHeight - codeElement.clientHeight > 1) || (codeElement.scrollHeight - element.clientHeight > 1)
+			: false;
+		return verticalOverflow || horizontalOverflow || nestedHorizontalOverflow || nestedVerticalOverflow;
+	}
+
+	function positionSnippetPreviewTooltip(anchor) {
+		if (!snippetPreviewTooltip || !anchor) return;
+		const padding = 12;
+		const offset = 10;
+		const anchorRect = anchor.getBoundingClientRect();
+		const tooltipRect = snippetPreviewTooltip.getBoundingClientRect();
+
+		let top = anchorRect.bottom + offset;
+		if (top + tooltipRect.height > window.innerHeight - padding) {
+			top = Math.max(padding, anchorRect.top - tooltipRect.height - offset);
+		}
+
+		let left = anchorRect.left;
+		if (left + tooltipRect.width > window.innerWidth - padding) {
+			left = window.innerWidth - tooltipRect.width - padding;
+		}
+		left = Math.max(padding, left);
+
+		snippetPreviewTooltip.style.top = `${top}px`;
+		snippetPreviewTooltip.style.left = `${left}px`;
+	}
+
+	function hideSnippetPreviewTooltip() {
+		if (!snippetPreviewTooltip) return;
+		snippetPreviewTooltip.classList.remove('visible');
+		snippetPreviewTooltip.setAttribute('aria-hidden', 'true');
+		activePreviewAnchor = null;
+	}
+
+	function showSnippetPreviewTooltip(text, anchor) {
+		if (!snippetPreviewTooltip || !anchor) return;
+		snippetPreviewTooltip.textContent = text;
+		snippetPreviewTooltip.setAttribute('aria-hidden', 'false');
+		activePreviewAnchor = anchor;
+		positionSnippetPreviewTooltip(anchor);
+		snippetPreviewTooltip.classList.add('visible');
+	}
+
+	window.addEventListener('resize', () => {
+		if (!activePreviewAnchor) return;
+		if (!isSnippetContentTruncated(activePreviewAnchor)) {
+			hideSnippetPreviewTooltip();
+			return;
+		}
+		positionSnippetPreviewTooltip(activePreviewAnchor);
+	});
+
+	document.addEventListener('scroll', () => {
+		if (!activePreviewAnchor) return;
+		positionSnippetPreviewTooltip(activePreviewAnchor);
+	}, true);
+
 	// Render the list of snippets
 	function renderSnippets() {
 		// Filter by search query and category selector
@@ -606,79 +1159,115 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 		snippetsContainer.innerHTML = '';
 
-		filtered.forEach(snippet => {
-			const badge = getCategoryBadge(snippet.category);
-			
-			// Clone the card from the template element
-			const clone = document.importNode(template.content, true);
-			
-			// Set badge info
-			const badgeEl = clone.querySelector('.category-badge');
-			if (badgeEl) {
-				badgeEl.textContent = badge.label;
-				badgeEl.className = `category-badge ${badge.class}`;
-			}
+		// Split into pinned and rest
+		const pinned = filtered.filter(s => pinnedIds.has(s.id));
+		const rest    = filtered.filter(s => !pinnedIds.has(s.id));
 
-			// Set description
-			const descEl = clone.querySelector('.snippet-description');
-			if (descEl) {
-				if (snippet.description) {
-					descEl.textContent = snippet.description;
-					descEl.style.display = 'block';
-				} else {
-					descEl.style.display = 'none';
-				}
-			}
+		// Render pinned snippets as independent cards at the start of the grid
+		if (pinned.length > 0) {
+			pinned.forEach(snippet => {
+				snippetsContainer.appendChild(buildCard(snippet));
+			});
+		}
 
-			// Set text content
-			const codeEl = clone.querySelector('code');
-			if (codeEl) {
-				codeEl.textContent = snippet.text;
-			}
-
-			// Set tags
-			const tagsEl = clone.querySelector('.snippet-tags');
-			if (tagsEl && snippet.tags && snippet.tags.length > 0) {
-				snippet.tags.forEach(tag => {
-					const chip = document.createElement('span');
-					chip.className = 'tag-chip';
-					chip.textContent = tag;
-					tagsEl.appendChild(chip);
-				});
-			}
-
-			// Add event listener to copy button
-			const copyBtn = clone.querySelector('.copy-btn');
-			if (copyBtn) {
-				copyBtn.addEventListener('click', () => copyToClipboard(snippet.text, copyBtn));
-			}
-
-			// Show open-link button only for link snippets
-			const openLinkBtn = clone.querySelector('.open-link-btn');
-			if (openLinkBtn) {
-				const url = getSnippetUrl(snippet.text);
-				if (isSnippetLink(snippet) && url) {
-					openLinkBtn.href = url;
-					openLinkBtn.hidden = false;
-				} else {
-					openLinkBtn.hidden = true;
-				}
-			}
-
-			// Add event listener to edit button
-			const editBtn = clone.querySelector('.edit-btn');
-			if (editBtn) {
-				editBtn.addEventListener('click', () => openEditModal(snippet.id));
-			}
-
-			// Add event listener to delete button
-			const deleteBtn = clone.querySelector('.delete-btn');
-			if (deleteBtn) {
-				deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
-			}
-
-			snippetsContainer.appendChild(clone);
+		// Render the rest
+		rest.forEach(snippet => {
+			snippetsContainer.appendChild(buildCard(snippet));
 		});
+	}
+
+	function buildCard(snippet) {
+		const badge = getCategoryBadge(snippet.category);
+		const isPinned = pinnedIds.has(snippet.id);
+		
+		// Clone the card from the template element
+		const clone = document.importNode(template.content, true);
+		const card = clone.querySelector('.snippet-card');
+
+		if (isPinned && card) card.classList.add('is-pinned');
+		
+		// Set badge info
+		const badgeEl = clone.querySelector('.category-badge');
+		if (badgeEl) {
+			badgeEl.textContent = badge.label;
+			badgeEl.className = `category-badge ${badge.class}`;
+		}
+
+		// Set description
+		const descEl = clone.querySelector('.snippet-description');
+		if (descEl) {
+			if (snippet.description) {
+				descEl.textContent = snippet.description;
+				descEl.style.display = 'block';
+			} else {
+				descEl.style.display = 'none';
+			}
+		}
+
+		// Set text content
+		const contentEl = clone.querySelector('.snippet-content');
+		const codeEl = clone.querySelector('code');
+		if (codeEl) {
+			codeEl.textContent = snippet.text;
+		}
+		if (contentEl) {
+			contentEl.addEventListener('mouseenter', () => {
+				if (!isSnippetContentTruncated(contentEl)) return;
+				showSnippetPreviewTooltip(snippet.text, contentEl);
+			});
+			contentEl.addEventListener('mouseleave', hideSnippetPreviewTooltip);
+		}
+
+		// Set tags
+		const tagsEl = clone.querySelector('.snippet-tags');
+		if (tagsEl && snippet.tags && snippet.tags.length > 0) {
+			snippet.tags.forEach(tag => {
+				const chip = document.createElement('span');
+				chip.className = 'tag-chip';
+				chip.textContent = tag;
+				tagsEl.appendChild(chip);
+			});
+		}
+
+		// Pin button
+		const pinBtn = clone.querySelector('.pin-btn');
+		if (pinBtn) {
+			if (isPinned) pinBtn.classList.add('pinned');
+			pinBtn.title = isPinned ? 'Unpin snippet' : 'Pin snippet';
+			pinBtn.addEventListener('click', () => togglePin(snippet.id));
+		}
+
+		// Add event listener to copy button
+		const copyBtn = clone.querySelector('.copy-btn');
+		if (copyBtn) {
+			copyBtn.addEventListener('click', () => handleSnippetCopy(snippet.text, copyBtn));
+		}
+
+		// Show open-link button only for link snippets
+		const openLinkBtn = clone.querySelector('.open-link-btn');
+		if (openLinkBtn) {
+			const url = getSnippetUrl(snippet.text);
+			if (isSnippetLink(snippet) && url) {
+				openLinkBtn.href = url;
+				openLinkBtn.hidden = false;
+			} else {
+				openLinkBtn.hidden = true;
+			}
+		}
+
+		// Add event listener to edit button
+		const editBtn = clone.querySelector('.edit-btn');
+		if (editBtn) {
+			editBtn.addEventListener('click', () => openEditModal(snippet.id));
+		}
+
+		// Add event listener to delete button
+		const deleteBtn = clone.querySelector('.delete-btn');
+		if (deleteBtn) {
+			deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
+		}
+
+		return clone;
 	}
 
   // Get next numeric ID
@@ -747,22 +1336,6 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 </script>
 
 <style>
-	/* CSS Variables & Tokens */
-	:root {
-		--primary: #6366f1;
-		--primary-hover: #4f46e5;
-		--primary-glow: rgba(99, 102, 241, 0.3);
-		--accent-success: #10b981;
-		--accent-success-hover: #059669;
-		--accent-info: #0ea5e9;
-		--accent-error: #ef4444;
-		--bg-card: rgba(22, 24, 37, 0.7);
-		--border-color: rgba(255, 255, 255, 0.08);
-		--text-primary: #f3f4f6;
-		--text-muted: #9ca3af;
-		--font-title: 'Plus Jakarta Sans', sans-serif;
-	}
-
 	/* Main container setup */
 	.app-container {
 		max-width: 1200px;
@@ -772,6 +1345,42 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		display: flex;
 		flex-direction: column;
 		gap: 2.5rem;
+	}
+
+	:global(html.runtime-tauri) .app-container {
+		min-height: 100%;
+		padding-top: 1.35rem;
+		padding-bottom: 1.75rem;
+	}
+
+	:global(html.runtime-tauri[data-desktop-platform='macos']) .app-container {
+		padding-top: 1.05rem;
+		padding-bottom: 1.5rem;
+		gap: 2.15rem;
+	}
+
+	:global(html.runtime-tauri[data-window-maximized='true']) .app-container {
+		padding-top: 1.1rem;
+		padding-inline: 1.25rem;
+		padding-bottom: 1.35rem;
+	}
+
+	@media (max-width: 720px) {
+		:global(html.runtime-tauri) .app-container {
+			padding-inline: 1rem;
+			padding-top: 1.05rem;
+			padding-bottom: 1.2rem;
+			gap: 1.9rem;
+		}
+	}
+
+	@media (max-width: 560px) {
+		:global(html.runtime-tauri) .app-container {
+			padding-inline: 0.85rem;
+			padding-top: 0.95rem;
+			padding-bottom: 1rem;
+			gap: 1.6rem;
+		}
 	}
 
 	/* Layout Grid */
@@ -834,16 +1443,51 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		pointer-events: none;
 	}
 
+	.snippet-preview-tooltip {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 1100;
+		max-width: min(560px, calc(100vw - 1.5rem));
+		max-height: min(360px, calc(100vh - 1.5rem));
+		overflow: auto;
+		padding: 0.9rem 1rem;
+		border-radius: 14px;
+		border: 1px solid var(--preview-tooltip-border);
+		background: var(--preview-tooltip-bg);
+		color: var(--text-primary);
+		box-shadow: var(--preview-tooltip-shadow);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		font-family: 'Fira Code', 'Courier New', Courier, monospace;
+		font-size: 0.84rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		word-break: break-word;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(6px) scale(0.98);
+		transform-origin: top left;
+		transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+		pointer-events: none;
+	}
+
+	.snippet-preview-tooltip.visible {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0) scale(1);
+	}
+
 	.toast {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		background: #1e2030;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		color: #ffffff;
+		background: var(--bg-card-solid);
+		border: 1px solid var(--border-color);
+		color: var(--text-primary);
 		padding: 0.875rem 1.25rem;
 		border-radius: 12px;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 		transform: translateY(100px);
 		opacity: 0;
 		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -900,13 +1544,20 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		overflow-y: auto;
 		border-radius: 20px !important;
 		padding: 2rem !important;
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		border: 1px solid var(--border-color);
+		background: var(--bg-card-solid) !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
 		transform: translateY(20px) scale(0.97);
 		transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.modal-backdrop.open .modal-box {
 		transform: translateY(0) scale(1);
+	}
+
+	.modal-box-compact {
+		max-width: 460px;
 	}
 
 	.modal-header {
@@ -921,7 +1572,7 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		font-size: 1.25rem;
 		font-weight: 700;
 		margin: 0;
-		color: #ffffff;
+		color: var(--text-primary);
 	}
 
 	.modal-close-btn {
@@ -937,8 +1588,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	.modal-close-btn:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.08);
+		color: var(--text-primary);
+		background: var(--bg-hover);
 	}
 
 	/* Form fields shared inside modal */
@@ -962,10 +1613,39 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		color: var(--text-muted);
 	}
 
-	.modal-box .form-group textarea,
-	.modal-box .form-group select,
-	.modal-box .form-group input:not(#edit-snippet-tags-input) {
-		background: rgba(15, 16, 22, 0.6);
+	.variables-modal-copy {
+		margin: -0.25rem 0 0;
+		color: var(--text-muted);
+		font-size: 0.92rem;
+		line-height: 1.5;
+	}
+
+	.variables-fields {
+		display: grid;
+		gap: 1rem;
+	}
+
+	:global(#variables-modal .variables-field) {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	:global(#variables-modal .variables-label) {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	:global(#variables-modal .variables-input) {
+		appearance: none;
+		-webkit-appearance: none;
+		width: 100%;
+		box-sizing: border-box;
+		background: var(--bg-input);
 		border: 1px solid var(--border-color);
 		border-radius: 10px;
 		color: var(--text-primary);
@@ -973,7 +1653,31 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		font-family: inherit;
 		font-size: 0.95rem;
 		outline: none;
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
+	}
+
+	:global(#variables-modal .variables-input::placeholder) {
+		color: var(--text-muted);
+		opacity: 1;
+	}
+
+	:global(#variables-modal .variables-input:focus) {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+	}
+
+	.modal-box .form-group textarea,
+	.modal-box .form-group select,
+	.modal-box .form-group input:not(#edit-snippet-tags-input) {
+		background: var(--bg-input);
+		border: 1px solid var(--border-color);
+		border-radius: 10px;
+		color: var(--text-primary);
+		padding: 0.875rem;
+		font-family: inherit;
+		font-size: 0.95rem;
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
 	}
 
 	.modal-box .form-group textarea:focus,
@@ -1002,8 +1706,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	.btn-cancel {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--bg-hover);
+		border: 1px solid var(--border-color);
 		color: var(--text-muted);
 		padding: 0.65rem 1.25rem;
 		border-radius: 10px;
@@ -1016,8 +1720,8 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	}
 
 	.btn-cancel:hover {
-		background: rgba(255, 255, 255, 0.08);
-		color: #ffffff;
+		background: var(--bg-card);
+		color: var(--text-primary);
 	}
 
 	.btn-save {

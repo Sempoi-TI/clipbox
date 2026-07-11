@@ -26,6 +26,13 @@ import categories from '../data/categories.json';
 							<span id="sort-order-text" class="sort-btn-value">Descendente</span>
 						</span>
 					</button>
+
+					<!-- View toggle -->
+					<button type="button" id="view-toggle-btn" class="view-toggle-btn" title="Cambiar a vista de lista" aria-label="Cambiar a vista de lista">
+						<span id="view-toggle-icon" class="view-toggle-icon" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+						</span>
+					</button>
 				</div>
 				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
 			</div>
@@ -63,19 +70,72 @@ import categories from '../data/categories.json';
 </div>
 
 <style>
+  .search-filter-container {
+    --search-filter-button-height: 2.5rem;
+  }
+
   .sort-controls {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-left: auto;
+  }
+
+  /* View toggle button */
+  .view-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--search-filter-button-height);
+    height: var(--search-filter-button-height);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .view-toggle-btn:hover {
+    background: var(--bg-card);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .view-toggle-btn.is-list {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.35);
+    color: #a5b4fc;
+  }
+
+  .view-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    line-height: 0;
+  }
+
+  .view-toggle-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    flex-shrink: 0;
   }
 
   .sort-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.65rem;
     background: rgba(99, 102, 241, 0.08);
     border: 1px solid rgba(99, 102, 241, 0.22);
-    color: #c7d2fe;
-    padding: 0.55rem 0.9rem 0.55rem 0.7rem;
+    color: var(--text-secondary);
+    min-height: var(--search-filter-button-height);
+    padding: 0.4rem 0.9rem 0.4rem 0.7rem;
     border-radius: 12px;
     cursor: pointer;
     font-family: inherit;
@@ -86,14 +146,12 @@ import categories from '../data/categories.json';
   .sort-btn:hover {
     background: rgba(99, 102, 241, 0.14);
     border-color: rgba(99, 102, 241, 0.42);
-    color: #e0e7ff;
+    color: var(--text-primary);
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(99, 102, 241, 0.16);
   }
 
-  .sort-btn:active {
-    transform: translateY(0);
-  }
+  .sort-btn:active { transform: translateY(0); }
 
   .sort-btn-icon {
     display: flex;
@@ -138,7 +196,8 @@ import categories from '../data/categories.json';
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-muted);
+    opacity: 0.7;
   }
 
   .sort-btn-value {
@@ -149,28 +208,9 @@ import categories from '../data/categories.json';
 
   .source-picker-wrapper .sort-btn {
     flex-shrink: 0;
-    padding: 0.55rem 0.9rem 0.55rem 0.7rem;
+    min-height: var(--search-filter-button-height);
+    padding: 0.4rem 0.9rem 0.4rem 0.7rem;
     font-size: inherit;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.22);
-    color: #c7d2fe;
-  }
-
-  .source-picker-wrapper .sort-btn:hover {
-    background: rgba(99, 102, 241, 0.14);
-    border-color: rgba(99, 102, 241, 0.42);
-    color: #e0e7ff;
-  }
-
-  .source-picker-wrapper .sort-btn.sort-asc {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.24);
-    color: #bbf7d0;
-  }
-
-  .source-picker-wrapper .sort-btn.sort-asc:hover {
-    background: rgba(16, 185, 129, 0.14);
-    border-color: rgba(16, 185, 129, 0.4);
   }
 
   .search-bar-wrapper {
@@ -182,22 +222,24 @@ import categories from '../data/categories.json';
 
 	.search-bar-wrapper input {
 		width: 100%;
-		background: var(--bg-card, rgba(22, 24, 37, 0.7));
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
-		color: var(--text-primary, #f3f4f6);
+		color: var(--text-primary);
 		padding: 0.875rem 1rem 0.875rem 2.75rem;
 		font-size: 1rem;
 		outline: none;
 		transition: all 0.2s;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 	}
 
 	.search-bar-wrapper input:focus {
-		border-color: var(--primary, #6366f1);
-		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1);
-		background: rgba(22, 24, 37, 0.9);
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 4px 20px rgba(0, 0, 0, 0.08);
+		background: var(--bg-input);
 	}
+
+	.search-bar-wrapper input::placeholder { color: var(--text-muted); }
 
 	.search-icon {
 		position: absolute;
@@ -249,19 +291,24 @@ import categories from '../data/categories.json';
 	}
 
 	.source-picker-wrapper button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+		min-height: var(--search-filter-button-height);
+		background: var(--bg-hover);
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
-		color: var(--text-primary, #f3f4f6);
-		padding: 0.85rem 1rem;
+		color: var(--text-primary);
+		padding: 0.4rem 1rem;
 		font-size: 0.95rem;
 		cursor: pointer;
 		transition: all 0.2s;
 	}
 
 	.source-picker-wrapper button:hover {
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--bg-card);
+		border-color: var(--primary);
 	}
 
 	.source-picker-wrapper .source-file-name {
@@ -280,10 +327,14 @@ import categories from '../data/categories.json';
 	}
 
 	.filter-btn {
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
-		color: var(--text-muted, #9ca3af);
-		padding: 0.5rem 1rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg-hover);
+		border: 1px solid var(--border-color);
+		color: var(--text-muted);
+		min-height: var(--search-filter-button-height);
+		padding: 0.35rem 1rem;
 		border-radius: 15px;
 		font-size: 0.65rem;
 		font-weight: 500;
@@ -292,9 +343,9 @@ import categories from '../data/categories.json';
 	}
 
 	.filter-btn:hover {
-		background: rgba(255, 255, 255, 0.06);
-		color: #ffffff;
-		border-color: rgba(255, 255, 255, 0.15);
+		background: var(--bg-card);
+		color: var(--text-primary);
+		border-color: var(--border-focus);
 	}
 
 	.filter-btn.active {
