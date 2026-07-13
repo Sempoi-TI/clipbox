@@ -9,6 +9,7 @@ Una aplicación web moderna para organizar, guardar y buscar snippets de código
 - 📦 **Múltiples colecciones**: Soporta diferentes colecciones de snippets (APTI, NCIF, etc.)
 - ⚡ **Rendimiento**: Construido con Astro para máxima velocidad
 - 🎨 **Interfaz limpia**: Diseño intuitivo y responsive
+- 📱 **PWA instalable**: Puede instalarse en móvil y escritorio con iconos, manifest y soporte offline básico
 
 ## 🚀 Estructura del Proyecto
 
@@ -50,6 +51,21 @@ Todos los comandos se ejecutan desde la raíz del proyecto:
 | `npm run preview`         | Vista previa del build local                      |
 | `astro dev --background`  | Inicia servidor en modo background                |
 | `astro dev stop`          | Detiene servidor en background                    |
+
+## PWA
+
+La aplicación incluye configuración PWA manual compatible con Astro 7:
+
+- `public/manifest.webmanifest`: metadatos de instalación
+- `public/sw.js`: service worker con cache estático y fallback offline
+- `public/icons/`: iconos para Android/desktop
+- `public/apple-touch-icon.png`: icono para iOS
+
+Para que la instalación funcione correctamente en navegadores compatibles:
+
+- Usa `https` en despliegue real
+- Mantén accesibles `manifest.webmanifest` y `sw.js`
+- Verifica en DevTools que el navegador detecta el manifest y el service worker
 
 ## 🛠️ Desarrollo
 
