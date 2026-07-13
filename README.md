@@ -27,8 +27,6 @@ Esto significa que puedes seguir construyendo la mayor parte de la app como ante
 /
 ├── public/
 │   ├── snippets.json
-│   ├── snippets-apti.json
-│   └── snippets-ncif.json
 ├── src/
 │   ├── assets/
 │   │   └── clipbox-icon.svg       # Fuente única del icono web + desktop
