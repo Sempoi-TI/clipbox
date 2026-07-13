@@ -5,9 +5,6 @@ import SnippetForm from '../components/SnippetForm.astro';
 import SearchFilter from '../components/SearchFilter.astro';
 import SnippetCardTemplate from '../components/SnippetCardTemplate.astro';
 import categories from '../data/categories.json';
-
-// Filter out 'All' for form categories
-const formCategories = categories.filter(cat => cat.id !== 'all');
 ---
 
 <Layout>
@@ -109,41 +106,57 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	</main>
 </Layout>
 
-<script type="module" define:vars={{ categories }}>
-	// Categories data injected from Astro
-	const CATEGORIES = categories;
+<script>
+	// @ts-nocheck
+	import { supabase } from '../scripts/supabase-client';
+	import categoriesData from '../data/categories.json';
 
-	// Model representing a text snippet
-	
-	const DEFAULT_DATASET_FILE = '/snippets-apti.json';
-	let selectedDatasetKey = 'default';
-	let selectedDatasetFriendlyName = 'snippets-apti.json';
-  let sortOrderAscending = true;
+	const CATEGORIES = categoriesData;
+	const VIEW_ICON_GRID = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`;
+	const VIEW_ICON_LIST = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+	const SNIPPET_VARIABLE_REGEX = /\{\{\s*([^{}]+?)\s*\}\}/g;
 
-  // State
-	let snippets= [];
+	let sortOrderAscending = true;
+	let snippets = [];
 	let currentFilter = 'all';
 	let searchQuery = '';
-	let pinnedIds = new Set(); // IDs of pinned snippets (persisted separately)
-	let viewMode = 'grid'; // 'grid' | 'list'
-	let currentTags= []; // tags being built in the form
+	let viewMode = 'grid';
+	let currentTags = [];
+	let editTags = [];
 
-	// DOM Elements
-	let form= null;
-	let textInput= null;
-	let descriptionInput= null;
-	let categorySelect= null;
-	let tagsInput= null;
-	let tagChipsRow= null;
-	let searchInput= null;
-	let snippetsContainer= null;
-	let filterButtons= document.querySelectorAll('.filter-btn');
-	let fileInput= null;
-	let fileButton= null;
-	let exportButton= null;
-	let fileNameDisplay= null;
-	let toastContainer= null;
-	let template= null;
+	let form = null;
+	let textInput = null;
+	let descriptionInput = null;
+	let categorySelect = null;
+	let tagsInput = null;
+	let tagChipsRow = null;
+	let searchInput = null;
+	let snippetsContainer = null;
+	let filterButtons = document.querySelectorAll('.filter-btn');
+	let exportButton = null;
+	let toastContainer = null;
+	let template = null;
+
+	const variablesModal = document.getElementById('variables-modal');
+	const variablesForm = document.getElementById('variables-form');
+	const variablesFields = document.getElementById('variables-fields');
+	const variablesModalCloseBtn = document.getElementById('variables-modal-close-btn');
+	const variablesModalCancelBtn = document.getElementById('variables-modal-cancel-btn');
+
+	const editModal = document.getElementById('edit-modal');
+	const editForm = document.getElementById('edit-form');
+	const editIdInput = document.getElementById('edit-snippet-id');
+	const editTextInput = document.getElementById('edit-snippet-text');
+	const editDescInput = document.getElementById('edit-snippet-description');
+	const editCategorySelect = document.getElementById('edit-snippet-category');
+	const editTagsInput = document.getElementById('edit-snippet-tags-input');
+	const editTagChipsRow = document.getElementById('edit-tag-chips-row');
+
+	const snippetPreviewTooltip = document.getElementById('snippet-preview-tooltip');
+
+	let pendingCopyButton = null;
+	let pendingCopyText = '';
+	let activePreviewAnchor = null;
 
 	function initDomElements() {
 		form = document.getElementById('snippet-form');
@@ -155,17 +168,32 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		searchInput = document.getElementById('search-input');
 		snippetsContainer = document.getElementById('snippets-container');
 		filterButtons = document.querySelectorAll('.filter-btn');
-		fileInput = document.getElementById('snippet-file-input');
-		fileButton = document.getElementById('snippet-file-button');
 		exportButton = document.getElementById('export-snippets-button');
-		fileNameDisplay = document.getElementById('snippet-file-name');
 		toastContainer = document.getElementById('toast-container');
 		template = document.getElementById('snippet-card-template');
 	}
 
-	initDomElements();
+	function normalizeSnippet(row) {
+		return {
+			id: Number(row.id),
+			text: row.text ?? '',
+			description: row.description || undefined,
+			tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
+			category: row.category || 'Code',
+			pinned: Boolean(row.pinned)
+		};
+	}
 
-	// ---- Tag builder helpers ----
+	function getSnippetPayload({ text, description, tags, category, pinned }) {
+		return {
+			text,
+			description: description || null,
+			tags: tags.length > 0 ? tags : [],
+			category,
+			pinned: Boolean(pinned)
+		};
+	}
+
 	function renderFormTags() {
 		if (!tagChipsRow) return;
 		tagChipsRow.innerHTML = '';
@@ -187,141 +215,88 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		});
 	}
 
+	function renderEditTags() {
+		if (!editTagChipsRow) return;
+		editTagChipsRow.innerHTML = '';
+		editTags.forEach((tag, i) => {
+			const chip = document.createElement('span');
+			chip.className = 'form-tag-chip';
+			chip.textContent = tag;
+			const removeBtn = document.createElement('button');
+			removeBtn.type = 'button';
+			removeBtn.className = 'form-tag-remove';
+			removeBtn.title = 'Remove tag';
+			removeBtn.textContent = '×';
+			removeBtn.addEventListener('click', () => {
+				editTags.splice(i, 1);
+				renderEditTags();
+			});
+			chip.appendChild(removeBtn);
+			editTagChipsRow.appendChild(chip);
+		});
+	}
+
+	function sanitizeTag(raw) {
+		return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+	}
+
 	function addTag(raw) {
-		const tag = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+		const tag = sanitizeTag(raw);
 		if (tag && !currentTags.includes(tag)) {
 			currentTags.push(tag);
 			renderFormTags();
 		}
 	}
 
-	if (tagsInput) {
-		tagsInput.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter' || e.key === ',') {
-				e.preventDefault();
-				addTag(tagsInput.value);
-				tagsInput.value = '';
-			} else if (e.key === 'Backspace' && tagsInput.value === '' && currentTags.length > 0) {
-				currentTags.pop();
-				renderFormTags();
-			}
-		});
-		// Also support pasting comma-separated tags
-		tagsInput.addEventListener('blur', () => {
-			if (tagsInput.value.trim()) {
-				addTag(tagsInput.value);
-				tagsInput.value = '';
-			}
-		});
-	}
-
-	function getDatasetStorageKey(datasetKey) {
-		return `clipbox_snippets_${datasetKey}`;
-	}
-
-	function getDatasetMetadataKey() {
-		return 'clipbox_dataset_metadata';
-	}
-
-	function saveDatasetMetadata() {
-		const metadata = {
-			selectedDatasetFriendlyName,
-			selectedDatasetKey
-		};
-		localStorage.setItem(getDatasetMetadataKey(), JSON.stringify(metadata));
-	}
-
-	function updateDatasetDisplayName(name) {
-		selectedDatasetFriendlyName = name;
-		if (fileNameDisplay) {
-			fileNameDisplay.textContent = name;
+	function addEditTag(raw) {
+		const tag = sanitizeTag(raw);
+		if (tag && !editTags.includes(tag)) {
+			editTags.push(tag);
+			renderEditTags();
 		}
 	}
 
-	async function loadDefaultSnippets() {
-		selectedDatasetKey = 'default';
-		updateDatasetDisplayName(DEFAULT_DATASET_FILE.split('/').pop() || 'snippets.json');
+	function wireTagInputs() {
+		if (tagsInput) {
+			tagsInput.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ',') {
+					e.preventDefault();
+					addTag(tagsInput.value);
+					tagsInput.value = '';
+				} else if (e.key === 'Backspace' && tagsInput.value === '' && currentTags.length > 0) {
+					currentTags.pop();
+					renderFormTags();
+				}
+			});
 
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
-		const stored = localStorage.getItem(storageKey);
-		if (stored) {
-			try {
-				snippets = JSON.parse(stored);
-				saveDatasetMetadata();
-				return;
-			} catch (e) {
-				console.warn('Invalid stored snippets for default dataset, reloading file version.');
-			}
+			tagsInput.addEventListener('blur', () => {
+				if (tagsInput.value.trim()) {
+					addTag(tagsInput.value);
+					tagsInput.value = '';
+				}
+			});
 		}
 
-		try {
-			const response = await fetch(DEFAULT_DATASET_FILE);
-			if (response.ok) {
-				snippets = await response.json();
-				saveDatasetMetadata();
-				return;
-			}
-			console.warn('Unable to load default snippets from', DEFAULT_DATASET_FILE);
-		} catch (e) {
-			console.warn('Error fetching default snippet file:', e);
-		}
+		if (editTagsInput) {
+			editTagsInput.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ',') {
+					e.preventDefault();
+					addEditTag(editTagsInput.value);
+					editTagsInput.value = '';
+				} else if (e.key === 'Backspace' && editTagsInput.value === '' && editTags.length > 0) {
+					editTags.pop();
+					renderEditTags();
+				}
+			});
 
-		snippets = [];
-		saveDatasetMetadata();
-	}
-
-	async function loadCustomSnippetsFromFile(file) {
-		if (!file) return;
-		const text = await file.text();
-		try {
-			const parsed = JSON.parse(text);
-			if (!Array.isArray(parsed)) {
-				throw new Error('JSON file must contain an array of snippets');
-			}
-			snippets = parsed;
-			selectedDatasetKey = `custom_${file.name}`;
-			updateDatasetDisplayName(file.name);
-			saveSnippets();
-			showToast(`Loaded ${file.name}`, 'success');
-		} catch (e) {
-			console.error('Error loading custom snippet file:', e);
-			showToast('Invalid JSON file selected', 'error');
+			editTagsInput.addEventListener('blur', () => {
+				if (editTagsInput.value.trim()) {
+					addEditTag(editTagsInput.value);
+					editTagsInput.value = '';
+				}
+			});
 		}
 	}
-
-	function saveSnippets() {
-		const storageKey = getDatasetStorageKey(selectedDatasetKey);
-		localStorage.setItem(storageKey, JSON.stringify(snippets));
-		saveDatasetMetadata();
-	}
-
-	// ---- Pin persistence (independent of dataset) ----
-	function loadPins() {
-		try {
-			const raw = localStorage.getItem('clipbox_pinned_ids');
-			if (raw) pinnedIds = new Set(JSON.parse(raw));
-		} catch { pinnedIds = new Set(); }
-	}
-
-	function savePins() {
-		localStorage.setItem('clipbox_pinned_ids', JSON.stringify([...pinnedIds]));
-	}
-
-	function togglePin(id) {
-		if (pinnedIds.has(id)) {
-			pinnedIds.delete(id);
-			showToast('Snippet unpinned', 'info');
-		} else {
-			pinnedIds.add(id);
-			showToast('Snippet pinned!', 'success');
-		}
-		savePins();
-		renderSnippets();
-	}
-
-	// ---- View mode (grid / list) ----
-	const VIEW_ICON_GRID = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>`;
-	const VIEW_ICON_LIST = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
 
 	function loadViewMode() {
 		const saved = localStorage.getItem('clipbox_view_mode');
@@ -354,50 +329,42 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		});
 	}
 
-	async function loadSnippetsFromMetadata() {
-		const metadata = localStorage.getItem(getDatasetMetadataKey());
-		if (!metadata) {
-			await loadDefaultSnippets();
-			return;
-		}
+	function updateSortButtonUI() {
+		const sortBtn = document.getElementById('sort-order-btn');
+		const text = document.getElementById('sort-order-text');
+		if (!sortBtn || !text) return;
 
-		try {
-			const parsed = JSON.parse(metadata);
-			if (parsed?.selectedDatasetKey === 'default') {
-				await loadDefaultSnippets();
-				return;
-			}
-
-			const storageKey = getDatasetStorageKey(parsed.selectedDatasetKey || 'default');
-			const stored = localStorage.getItem(storageKey);
-			if (stored) {
-				snippets = JSON.parse(stored);
-				selectedDatasetKey = parsed.selectedDatasetKey;
-				updateDatasetDisplayName(parsed.selectedDatasetFriendlyName || parsed.selectedDatasetKey.replace(/^custom_/, 'Custom dataset'));
-				return;
-			}
-		} catch (e) {
-			console.warn('Invalid dataset metadata, loading default dataset.', e);
-		}
-
-		await loadDefaultSnippets();
+		sortBtn.classList.toggle('sort-asc', sortOrderAscending);
+		sortBtn.classList.toggle('sort-desc', !sortOrderAscending);
+		sortBtn.setAttribute('aria-pressed', String(sortOrderAscending));
+		text.textContent = sortOrderAscending ? 'Ascendente' : 'Descendente';
 	}
 
-	function wireDatasetFileChooser() {
-		if (!fileInput) return;
-
-		if (fileButton) {
-			fileButton.addEventListener('click', () => {
-				if (fileInput) fileInput.click();
-			});
-		}
-
-		fileInput.addEventListener('change', async () => {
-			const file = fileInput.files?.[0];
-			if (!file) return;
-			await loadCustomSnippetsFromFile(file);
+	function wireSortButton() {
+		const sortBtn = document.getElementById('sort-order-btn');
+		if (!sortBtn) return;
+		updateSortButtonUI();
+		sortBtn.addEventListener('click', () => {
+			sortOrderAscending = !sortOrderAscending;
+			updateSortButtonUI();
 			renderSnippets();
 		});
+	}
+
+	async function loadSnippets() {
+		if (snippetsContainer) {
+			snippetsContainer.innerHTML = '<div class="loading-state">Loading snippets...</div>';
+		}
+
+		const { data, error } = await supabase
+			.from('snippets')
+			.select('id, text, description, tags, category, pinned');
+
+		if (error) {
+			throw error;
+		}
+
+		snippets = (data ?? []).map(normalizeSnippet);
 	}
 
 	function wireExportButton() {
@@ -407,45 +374,20 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 	async function exportSnippetsToClipboard() {
 		try {
-			const storageKey = getDatasetStorageKey(selectedDatasetKey);
-			const raw = localStorage.getItem(storageKey);
-			if (!raw) {
-				showToast('No snippets found in localStorage for current dataset', 'error');
-				return;
-			}
-
-			const parsed = JSON.parse(raw);
-			if (!Array.isArray(parsed)) {
-				showToast('Default snippets data is invalid', 'error');
-				return;
-			}
-
-			const exportText = JSON.stringify(parsed, null, 2);
+			const exportText = JSON.stringify(snippets, null, 2);
 			await navigator.clipboard.writeText(exportText);
-			showToast(`Exported ${parsed.length} default snippets to clipboard!`, 'success');
-		} catch (err) {
-			console.error('Export failed', err);
+			showToast(`Exported ${snippets.length} snippets to clipboard!`, 'success');
+		} catch (error) {
+			console.error('Export failed', error);
 			showToast('Failed to copy JSON to clipboard', 'error');
 		}
 	}
 
-	async function init() {
-		initDomElements();
-		loadPins();
-		loadViewMode();
-		await loadSnippetsFromMetadata();
-		wireDatasetFileChooser();
-		wireExportButton();
-		wireViewToggle();
-		renderSnippets();
-	}
-
-	// Show toast notification
-	function showToast(message, type) {
+	function showToast(message, type = 'success') {
+		if (!toastContainer) return;
 		const toast = document.createElement('div');
 		toast.className = `toast toast-${type}`;
-		
-		// Icon based on type
+
 		let icon = '';
 		if (type === 'success') {
 			icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
@@ -461,26 +403,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		`;
 
 		toastContainer.appendChild(toast);
-
-		// Animate entrance
 		setTimeout(() => toast.classList.add('visible'), 10);
 
-		// Remove after 2 seconds
 		setTimeout(() => {
 			toast.classList.remove('visible');
 			const removeToast = () => toast.remove();
 			toast.addEventListener('transitionend', removeToast, { once: true });
-			// Fallback if transitionend does not fire (e.g. reduced motion)
 			setTimeout(removeToast, 350);
 		}, 2000);
 	}
 
-	// Copy to clipboard with animation feedback
 	async function copyToClipboard(text, button) {
 		try {
 			await navigator.clipboard.writeText(text);
-			
-			// Visual feedback in button
 			const originalHTML = button.innerHTML;
 			button.classList.add('copied');
 			button.innerHTML = `
@@ -493,12 +428,10 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 				button.classList.remove('copied');
 				button.innerHTML = originalHTML;
 			}, 2000);
-		} catch (err) {
+		} catch (error) {
 			showToast('Error to copy text', 'error');
 		}
 	}
-
-	const SNIPPET_VARIABLE_REGEX = /\{\{\s*([^{}]+?)\s*\}\}/g;
 
 	function extractSnippetVariables(text) {
 		const variables = [];
@@ -518,15 +451,6 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			return Object.prototype.hasOwnProperty.call(values, name) ? values[name] : '';
 		});
 	}
-
-	const variablesModal = document.getElementById('variables-modal');
-	const variablesForm = document.getElementById('variables-form');
-	const variablesFields = document.getElementById('variables-fields');
-	const variablesModalCloseBtn = document.getElementById('variables-modal-close-btn');
-	const variablesModalCancelBtn = document.getElementById('variables-modal-cancel-btn');
-
-	let pendingCopyButton = null;
-	let pendingCopyText = '';
 
 	function closeVariablesModal() {
 		if (!variablesModal || !variablesFields) return;
@@ -591,59 +515,19 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		openVariablesModal(text, button);
 	}
 
-	// Delete a snippet
-	function deleteSnippet(id) {
-		snippets = snippets.filter(s => s.id !== id);
-		saveSnippets();
-		renderSnippets();
-		showToast('Snippet deleted', 'info');
-	}
-
-	// ---- Edit Modal ----
-	const editModal = document.getElementById('edit-modal');
-	const editForm = document.getElementById('edit-form');
-	const editIdInput = document.getElementById('edit-snippet-id');
-	const editTextInput = document.getElementById('edit-snippet-text');
-	const editDescInput = document.getElementById('edit-snippet-description');
-	const editCategorySelect = document.getElementById('edit-snippet-category');
-	const editTagsInput = document.getElementById('edit-snippet-tags-input');
-	const editTagChipsRow = document.getElementById('edit-tag-chips-row');
-
-	let editTags= [];
-
-	function renderEditTags() {
-		if (!editTagChipsRow) return;
-		editTagChipsRow.innerHTML = '';
-		editTags.forEach((tag, i) => {
-			const chip = document.createElement('span');
-			chip.className = 'form-tag-chip';
-			chip.textContent = tag;
-			const removeBtn = document.createElement('button');
-			removeBtn.type = 'button';
-			removeBtn.className = 'form-tag-remove';
-			removeBtn.title = 'Remove tag';
-			removeBtn.textContent = '×';
-			removeBtn.addEventListener('click', () => {
-				editTags.splice(i, 1);
-				renderEditTags();
-			});
-			chip.appendChild(removeBtn);
-			editTagChipsRow.appendChild(chip);
-		});
-	}
-
-	function addEditTag(raw) {
-		const tag = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-		if (tag && !editTags.includes(tag)) {
-			editTags.push(tag);
-			renderEditTags();
-		}
+	function closeEditModal() {
+		if (!editModal) return;
+		editModal.classList.remove('open');
+		editModal.setAttribute('aria-hidden', 'true');
+		editTags = [];
+		if (editTagsInput) editTagsInput.value = '';
 	}
 
 	function openEditModal(id) {
-		const snippet = snippets.find(s => s.id === id);
-		if (!snippet) return;
-		editIdInput.value = snippet.id;
+		const snippet = snippets.find((item) => item.id === id);
+		if (!snippet || !editModal || !editIdInput || !editTextInput || !editDescInput || !editCategorySelect) return;
+
+		editIdInput.value = String(snippet.id);
 		editTextInput.value = snippet.text;
 		editDescInput.value = snippet.description || '';
 		editCategorySelect.value = snippet.category;
@@ -654,124 +538,42 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		setTimeout(() => editTextInput.focus(), 50);
 	}
 
-	function closeEditModal() {
-		editModal.classList.remove('open');
-		editModal.setAttribute('aria-hidden', 'true');
-		editTags = [];
-		if (editTagsInput) editTagsInput.value = '';
-	}
-
-	if (editTagsInput) {
-		editTagsInput.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter' || e.key === ',') {
-				e.preventDefault();
-				addEditTag(editTagsInput.value);
-				editTagsInput.value = '';
-			} else if (e.key === 'Backspace' && editTagsInput.value === '' && editTags.length > 0) {
-				editTags.pop();
-				renderEditTags();
-			}
-		});
-		editTagsInput.addEventListener('blur', () => {
-			if (editTagsInput.value.trim()) {
-				addEditTag(editTagsInput.value);
-				editTagsInput.value = '';
-			}
-		});
-	}
-
-	// Close buttons
-	document.getElementById('modal-close-btn')?.addEventListener('click', closeEditModal);
-	document.getElementById('modal-cancel-btn')?.addEventListener('click', closeEditModal);
-	editModal?.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
-	variablesModalCloseBtn?.addEventListener('click', closeVariablesModal);
-	variablesModalCancelBtn?.addEventListener('click', closeVariablesModal);
-	variablesModal?.addEventListener('click', (e) => { if (e.target === variablesModal) closeVariablesModal(); });
-	document.addEventListener('keydown', (e) => {
-		if (e.key !== 'Escape') return;
-		if (variablesModal?.classList.contains('open')) {
-			closeVariablesModal();
+	async function deleteSnippet(id) {
+		const { error } = await supabase.from('snippets').delete().eq('id', id);
+		if (error) {
+			console.error('Delete failed', error);
+			showToast('Failed to delete snippet', 'error');
 			return;
 		}
-		closeEditModal();
-	});
 
-	if (variablesForm) {
-		variablesForm.addEventListener('submit', async (e) => {
-			e.preventDefault();
-			if (!pendingCopyText || !pendingCopyButton) return;
-
-			const values = {};
-			const formData = new FormData(variablesForm);
-			for (const [key, value] of formData.entries()) {
-				values[key] = String(value).trim();
-			}
-
-			const missingValue = Object.values(values).some(value => value === '');
-			if (missingValue) {
-				showToast('Completa todas las variables antes de copiar', 'error');
-				return;
-			}
-
-			const resolvedText = resolveSnippetVariables(pendingCopyText, values);
-			const button = pendingCopyButton;
-			closeVariablesModal();
-			await copyToClipboard(resolvedText, button);
-		});
+		snippets = snippets.filter((snippet) => snippet.id !== id);
+		renderSnippets();
+		showToast('Snippet deleted', 'info');
 	}
 
-	if (editForm) {
-		editForm.addEventListener('submit', (e) => {
-			e.preventDefault();
-			const id = editIdInput.value;
-			const text = editTextInput.value.trim();
-			if (!text) return;
-			// Flush any unconfirmed tag
-			if (editTagsInput && editTagsInput.value.trim()) {
-				addEditTag(editTagsInput.value);
-				editTagsInput.value = '';
-			}
-			const idx = snippets.findIndex(s => String(s.id) === id);
-			if (idx !== -1) {
-				snippets[idx] = {
-					...snippets[idx],
-					text,
-					description: editDescInput.value.trim() || undefined,
-					tags: editTags.length > 0 ? [...editTags] : undefined,
-					category: editCategorySelect.value
-				};
-				saveSnippets();
-				renderSnippets();
-				closeEditModal();
-				showToast('Snippet updated!', 'success');
-			}
-		});
+	async function togglePin(id) {
+		const snippet = snippets.find((item) => item.id === id);
+		if (!snippet) return;
+
+		const nextPinned = !snippet.pinned;
+		const { error } = await supabase
+			.from('snippets')
+			.update({ pinned: nextPinned })
+			.eq('id', id);
+
+		if (error) {
+			console.error('Pin update failed', error);
+			showToast('Failed to update pin status', 'error');
+			return;
+		}
+
+		snippet.pinned = nextPinned;
+		renderSnippets();
+		showToast(nextPinned ? 'Snippet pinned!' : 'Snippet unpinned', nextPinned ? 'success' : 'info');
 	}
 
-  function updateSortButtonUI() {
-    const sortBtn = document.getElementById('sort-order-btn');
-    const text = document.getElementById('sort-order-text');
-    if (!sortBtn || !text) return;
-
-    sortBtn.classList.toggle('sort-asc', sortOrderAscending);
-    sortBtn.classList.toggle('sort-desc', !sortOrderAscending);
-    sortBtn.setAttribute('aria-pressed', String(sortOrderAscending));
-    text.textContent = sortOrderAscending ? 'Ascendente' : 'Descendente';
-  }
-
-  const sortBtn = document.getElementById('sort-order-btn');
-  if (sortBtn) {
-      updateSortButtonUI();
-      sortBtn.addEventListener('click', () => {
-          sortOrderAscending = !sortOrderAscending;
-          updateSortButtonUI();
-          renderSnippets();
-      });
-  }
-
-  // Get SVG icon for category
 	function getCategoryBadge(category) {
-		const categoryData = CATEGORIES.find(cat => cat.value === category);
+		const categoryData = CATEGORIES.find((cat) => cat.value === category);
 		if (categoryData) {
 			return { label: `${categoryData.emoji} ${categoryData.label}`, class: categoryData.badge };
 		}
@@ -793,9 +595,6 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 	function isSnippetLink(snippet) {
 		return snippet.category === 'Link' && getSnippetUrl(snippet.text) !== null;
 	}
-
-	const snippetPreviewTooltip = document.getElementById('snippet-preview-tooltip');
-	let activePreviewAnchor = null;
 
 	function isSnippetContentTruncated(element) {
 		if (!element) return false;
@@ -863,20 +662,22 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		positionSnippetPreviewTooltip(activePreviewAnchor);
 	}, true);
 
-	// Render the list of snippets
 	function renderSnippets() {
-		// Filter by search query and category selector
-		const filtered = snippets.filter(s => {
-			const matchesCategory = currentFilter === 'all' || s.category === currentFilter;
-			const matchesSearch = s.text.toLowerCase().includes(searchQuery.toLowerCase()) || 
-			                      (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-			                      (s.tags && s.tags.some(t => t.includes(searchQuery.toLowerCase()))) ||
-			                      s.category.toLowerCase().includes(searchQuery.toLowerCase());
+		if (!snippetsContainer) return;
+
+		const normalizedSearch = searchQuery.trim().toLowerCase();
+		const filtered = snippets.filter((snippet) => {
+			const matchesCategory = currentFilter === 'all' || snippet.category === currentFilter;
+			const matchesSearch = !normalizedSearch ||
+				snippet.text.toLowerCase().includes(normalizedSearch) ||
+				(snippet.description && snippet.description.toLowerCase().includes(normalizedSearch)) ||
+				(snippet.tags && snippet.tags.some((tag) => tag.toLowerCase().includes(normalizedSearch))) ||
+				snippet.category.toLowerCase().includes(normalizedSearch);
+
 			return matchesCategory && matchesSearch;
 		});
-    
-    // Sort by id in current order
-    filtered.sort((a, b) => sortOrderAscending ? a.id - b.id : b.id - a.id);
+
+		filtered.sort((a, b) => sortOrderAscending ? a.id - b.id : b.id - a.id);
 
 		if (filtered.length === 0) {
 			snippetsContainer.innerHTML = `
@@ -889,42 +690,27 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		}
 
 		snippetsContainer.innerHTML = '';
+		const pinned = filtered.filter((snippet) => snippet.pinned);
+		const rest = filtered.filter((snippet) => !snippet.pinned);
 
-		// Split into pinned and rest
-		const pinned = filtered.filter(s => pinnedIds.has(s.id));
-		const rest    = filtered.filter(s => !pinnedIds.has(s.id));
-
-		// Render pinned snippets as independent cards at the start of the grid
-		if (pinned.length > 0) {
-			pinned.forEach(snippet => {
-				snippetsContainer.appendChild(buildCard(snippet));
-			});
-		}
-
-		// Render the rest
-		rest.forEach(snippet => {
+		[...pinned, ...rest].forEach((snippet) => {
 			snippetsContainer.appendChild(buildCard(snippet));
 		});
 	}
 
 	function buildCard(snippet) {
 		const badge = getCategoryBadge(snippet.category);
-		const isPinned = pinnedIds.has(snippet.id);
-		
-		// Clone the card from the template element
 		const clone = document.importNode(template.content, true);
 		const card = clone.querySelector('.snippet-card');
 
-		if (isPinned && card) card.classList.add('is-pinned');
-		
-		// Set badge info
+		if (snippet.pinned && card) card.classList.add('is-pinned');
+
 		const badgeEl = clone.querySelector('.category-badge');
 		if (badgeEl) {
 			badgeEl.textContent = badge.label;
 			badgeEl.className = `category-badge ${badge.class}`;
 		}
 
-		// Set description
 		const descEl = clone.querySelector('.snippet-description');
 		if (descEl) {
 			if (snippet.description) {
@@ -935,7 +721,6 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			}
 		}
 
-		// Set text content
 		const contentEl = clone.querySelector('.snippet-content');
 		const codeEl = clone.querySelector('code');
 		if (codeEl) {
@@ -949,10 +734,9 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			contentEl.addEventListener('mouseleave', hideSnippetPreviewTooltip);
 		}
 
-		// Set tags
 		const tagsEl = clone.querySelector('.snippet-tags');
-		if (tagsEl && snippet.tags && snippet.tags.length > 0) {
-			snippet.tags.forEach(tag => {
+		if (tagsEl && snippet.tags.length > 0) {
+			snippet.tags.forEach((tag) => {
 				const chip = document.createElement('span');
 				chip.className = 'tag-chip';
 				chip.textContent = tag;
@@ -960,21 +744,18 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			});
 		}
 
-		// Pin button
 		const pinBtn = clone.querySelector('.pin-btn');
 		if (pinBtn) {
-			if (isPinned) pinBtn.classList.add('pinned');
-			pinBtn.title = isPinned ? 'Unpin snippet' : 'Pin snippet';
+			if (snippet.pinned) pinBtn.classList.add('pinned');
+			pinBtn.title = snippet.pinned ? 'Unpin snippet' : 'Pin snippet';
 			pinBtn.addEventListener('click', () => togglePin(snippet.id));
 		}
 
-		// Add event listener to copy button
 		const copyBtn = clone.querySelector('.copy-btn');
 		if (copyBtn) {
 			copyBtn.addEventListener('click', () => handleSnippetCopy(snippet.text, copyBtn));
 		}
 
-		// Show open-link button only for link snippets
 		const openLinkBtn = clone.querySelector('.open-link-btn');
 		if (openLinkBtn) {
 			const url = getSnippetUrl(snippet.text);
@@ -986,13 +767,11 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 			}
 		}
 
-		// Add event listener to edit button
 		const editBtn = clone.querySelector('.edit-btn');
 		if (editBtn) {
 			editBtn.addEventListener('click', () => openEditModal(snippet.id));
 		}
 
-		// Add event listener to delete button
 		const deleteBtn = clone.querySelector('.delete-btn');
 		if (deleteBtn) {
 			deleteBtn.addEventListener('click', () => deleteSnippet(snippet.id));
@@ -1001,20 +780,20 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 		return clone;
 	}
 
-  // Get next numeric ID
-  function getNextSnippetId() {
-      if (snippets.length === 0) return 1;
-      const maxId = Math.max(...snippets.map(s => typeof s.id === 'number' ? s.id : 0));
-      return maxId + 1;
-  }
+	function resetCreateForm() {
+		if (textInput) textInput.value = '';
+		if (descriptionInput) descriptionInput.value = '';
+		currentTags = [];
+		renderFormTags();
+	}
 
-  // Handle form submission to add snippet
-	if (form) {
-		form.addEventListener('submit', (e) => {
+	function wireCreateForm() {
+		if (!form || !textInput || !categorySelect) return;
+		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
+
 			const text = textInput.value.trim();
 			const description = descriptionInput ? descriptionInput.value.trim() : '';
-			// Flush any unconfirmed tag still in the input
 			if (tagsInput && tagsInput.value.trim()) {
 				addTag(tagsInput.value);
 				tagsInput.value = '';
@@ -1024,44 +803,174 @@ const formCategories = categories.filter(cat => cat.id !== 'all');
 
 			if (!text) return;
 
-			const newSnippet= {
-				id: getNextSnippetId(),
+			const payload = getSnippetPayload({
 				text,
-				description: description || undefined,
-				tags: tags.length > 0 ? tags : undefined,
-				category
-			};
+				description,
+				tags,
+				category,
+				pinned: false
+			});
 
-			snippets.unshift(newSnippet);
-			saveSnippets();
+			const { data, error } = await supabase
+				.from('snippets')
+				.insert(payload)
+				.select('id, text, description, tags, category, pinned')
+				.single();
+
+			if (error) {
+				console.error('Create failed', error);
+				showToast('Failed to create snippet', 'error');
+				return;
+			}
+
+			snippets.unshift(normalizeSnippet(data));
 			renderSnippets();
-			
-			// Reset form
-			textInput.value = '';
-			if (descriptionInput) descriptionInput.value = '';
-			currentTags = [];
-			renderFormTags();
-			showToast('Snippet created successfully!');
+			resetCreateForm();
+			showToast('Snippet created successfully!', 'success');
 		});
 	}
 
-	// Handle search input
-	if (searchInput) {
-		searchInput.addEventListener('input', (e) => {
-			searchQuery = (e.target).value;
+	function wireEditForm() {
+		if (!editForm || !editIdInput || !editTextInput || !editCategorySelect) return;
+		editForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+
+			const id = Number(editIdInput.value);
+			const text = editTextInput.value.trim();
+			if (!text) return;
+
+			if (editTagsInput && editTagsInput.value.trim()) {
+				addEditTag(editTagsInput.value);
+				editTagsInput.value = '';
+			}
+
+			const payload = getSnippetPayload({
+				text,
+				description: editDescInput?.value.trim() || '',
+				tags: [...editTags],
+				category: editCategorySelect.value,
+				pinned: snippets.find((snippet) => snippet.id === id)?.pinned ?? false
+			});
+
+			const { error } = await supabase
+				.from('snippets')
+				.update(payload)
+				.eq('id', id);
+
+			if (error) {
+				console.error('Update failed', error);
+				showToast('Failed to update snippet', 'error');
+				return;
+			}
+
+			const idx = snippets.findIndex((snippet) => snippet.id === id);
+			if (idx !== -1) {
+				snippets[idx] = {
+					...snippets[idx],
+					...normalizeSnippet({ id, ...payload })
+				};
+			}
+
 			renderSnippets();
+			closeEditModal();
+			showToast('Snippet updated!', 'success');
 		});
 	}
 
-	// Handle filter buttons
-	filterButtons.forEach(btn => {
-		btn.addEventListener('click', () => {
-			filterButtons.forEach(b => b.classList.remove('active'));
-			btn.classList.add('active');
-			currentFilter = btn.getAttribute('data-category') || 'all';
-			renderSnippets();
+	function wireVariablesModal() {
+		variablesModalCloseBtn?.addEventListener('click', closeVariablesModal);
+		variablesModalCancelBtn?.addEventListener('click', closeVariablesModal);
+		variablesModal?.addEventListener('click', (e) => {
+			if (e.target === variablesModal) closeVariablesModal();
 		});
-	});
+
+		if (!variablesForm) return;
+		variablesForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!pendingCopyText || !pendingCopyButton) return;
+
+			const values = {};
+			const formData = new FormData(variablesForm);
+			for (const [key, value] of formData.entries()) {
+				values[key] = String(value).trim();
+			}
+
+			const missingValue = Object.values(values).some((value) => value === '');
+			if (missingValue) {
+				showToast('Completa todas las variables antes de copiar', 'error');
+				return;
+			}
+
+			const resolvedText = resolveSnippetVariables(pendingCopyText, values);
+			const button = pendingCopyButton;
+			closeVariablesModal();
+			await copyToClipboard(resolvedText, button);
+		});
+	}
+
+	function wireModalCloseEvents() {
+		document.getElementById('modal-close-btn')?.addEventListener('click', closeEditModal);
+		document.getElementById('modal-cancel-btn')?.addEventListener('click', closeEditModal);
+		editModal?.addEventListener('click', (e) => {
+			if (e.target === editModal) closeEditModal();
+		});
+		document.addEventListener('keydown', (e) => {
+			if (e.key !== 'Escape') return;
+			if (variablesModal?.classList.contains('open')) {
+				closeVariablesModal();
+				return;
+			}
+			closeEditModal();
+		});
+	}
+
+	function wireSearchAndFilters() {
+		if (searchInput) {
+			searchInput.addEventListener('input', (e) => {
+				searchQuery = e.target.value;
+				renderSnippets();
+			});
+		}
+
+		filterButtons.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				filterButtons.forEach((button) => button.classList.remove('active'));
+				btn.classList.add('active');
+				currentFilter = btn.getAttribute('data-category') || 'all';
+				renderSnippets();
+			});
+		});
+	}
+
+	async function init() {
+		initDomElements();
+		loadViewMode();
+		wireTagInputs();
+		wireExportButton();
+		wireViewToggle();
+		wireSortButton();
+		wireCreateForm();
+		wireEditForm();
+		wireVariablesModal();
+		wireModalCloseEvents();
+		wireSearchAndFilters();
+
+		try {
+			await loadSnippets();
+			renderSnippets();
+		} catch (error) {
+			console.error('Supabase load failed', error);
+			if (snippetsContainer) {
+				snippetsContainer.innerHTML = `
+					<div class="empty-state">
+						<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+						<p>No fue posible cargar los snippets desde Supabase.</p>
+					</div>
+				`;
+			}
+			showToast('Failed to load snippets from Supabase', 'error');
+		}
+	}
 
 	init();
 </script>

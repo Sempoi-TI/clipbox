@@ -5,13 +5,22 @@ import categories from '../data/categories.json';
 <div class="search-filter-container">
 	<div class="search-filter-inner">
 		<div class="source-picker-wrapper">
-			<label for="snippet-file-input">Choose dataset</label>
+			<label for="export-snippets-button">Fuente de datos</label>
 			<div class="source-file-picker">
-				<button type="button" id="snippet-file-button">Browse JSON file</button>
-				<span id="snippet-file-name" class="source-file-name">snippets.json</span>
+				<span id="snippet-source-name" class="source-file-name source-file-name-connected">
+					<span class="source-file-name-icon" aria-hidden="true">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+							<ellipse cx="12" cy="5" rx="7" ry="3"></ellipse>
+							<path d="M5 5v6c0 1.66 3.13 3 7 3s7-1.34 7-3V5"></path>
+							<path d="M5 11v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"></path>
+						</svg>
+					</span>
+					<span class="source-file-name-copy">
+						<span class="source-file-name-label">Fuente</span>
+						<span class="source-file-name-value">Supabase</span>
+					</span>
+				</span>
 				<button type="button" id="export-snippets-button" class="export-btn">Export JSON</button>
-
-
 				<div class="sort-controls">
 					<button type="button" id="sort-order-btn" title="Cambiar orden de snippets" class="sort-btn sort-desc" aria-pressed="false">
 						<span class="sort-btn-icon" aria-hidden="true">
@@ -34,7 +43,6 @@ import categories from '../data/categories.json';
 						</span>
 					</button>
 				</div>
-				<input type="file" id="snippet-file-input" accept=".json,application/json" hidden />
 			</div>
 		</div>
 
@@ -318,6 +326,56 @@ import categories from '../data/categories.json';
 		overflow: hidden;
 		text-overflow: ellipsis;
 		max-width: 240px;
+	}
+
+	.source-picker-wrapper .source-file-name-connected {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		height: var(--search-filter-button-height);
+		box-sizing: border-box;
+		padding: 0.25rem 0.72rem 0.25rem 0.6rem;
+		border-radius: 12px;
+		background: rgba(99, 102, 241, 0.08);
+		border: 1px solid rgba(99, 102, 241, 0.22);
+		color: var(--text-secondary);
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+		max-width: none;
+	}
+
+	.source-file-name-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 7px;
+		background: rgba(99, 102, 241, 0.16);
+		color: #a5b4fc;
+		flex-shrink: 0;
+	}
+
+	.source-file-name-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.02rem;
+		line-height: 1;
+	}
+
+	.source-file-name-label {
+		font-size: 0.55rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		opacity: 0.7;
+	}
+
+	.source-file-name-value {
+		font-size: 0.76rem;
+		font-weight: 700;
+		color: inherit;
 	}
 
 	.filter-tags {
