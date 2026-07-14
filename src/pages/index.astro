@@ -9,100 +9,175 @@ import categories from '../data/categories.json';
 
 <Layout>
 	<main class="app-container">
-		<Header />
-
-		<div class="app-grid">
-			<!-- Panel izquierdo: Snippet creator -->
-			<aside class="editor-panel">
-				<SnippetForm />
-			</aside>
-
-			<!-- Panel derecho: Search engine and History/List -->
-			<section class="list-panel">
-				<SearchFilter />
-
-				<div class="snippets-grid" id="snippets-container">
-					<!-- Will be dynamically filled with JavaScript -->
-					<div class="loading-state">Loading snippets...</div>
-				</div>
-			</section>
-		</div>
-
-		<!-- Toast Container -->
 		<div class="toast-container" id="toast-container"></div>
-		<div class="snippet-preview-tooltip" id="snippet-preview-tooltip" aria-hidden="true"></div>
-		
-		<!-- Edit Modal -->
-		<div class="modal-backdrop" id="edit-modal" aria-hidden="true">
-			<div class="modal-box glass-card">
-				<div class="modal-header">
-					<h2>Edit Snippet</h2>
-					<button class="modal-close-btn" id="modal-close-btn" title="Close">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-					</button>
-				</div>
-				<form id="edit-form" class="snippet-form">
-					<input type="hidden" id="edit-snippet-id" />
-					<div class="form-group">
-						<label for="edit-snippet-text">Content</label>
-						<textarea id="edit-snippet-text" rows="5" required></textarea>
-					</div>
-					<div class="form-group">
-						<label for="edit-snippet-description">Description (Optional)</label>
-						<input type="text" id="edit-snippet-description" placeholder="Add a short description..." autocomplete="off" />
-					</div>
-					<div class="form-group">
-						<label>Tags (Optional)</label>
-						<div class="tag-input-wrapper" id="edit-tag-input-wrapper">
-							<div class="tag-chips-row" id="edit-tag-chips-row"></div>
-							<input type="text" id="edit-snippet-tags-input" placeholder="Type a tag and press Enter..." autocomplete="off" />
+
+		<section class="auth-screen" id="auth-screen">
+			<div class="auth-shell">
+				<div class="auth-intro">
+					<div class="auth-brand">
+						<div class="auth-brand-icon">
+							<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
 						</div>
-						<span class="tag-hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a tag</span>
+						<div>
+							<h1>ClipBox</h1>
+							<p>Guarda, organiza y encuentra tus textos favoritos desde una sola interfaz.</p>
+						</div>
 					</div>
-					<div class="form-group">
-						<label for="edit-snippet-category">Category</label>
-						<select id="edit-snippet-category">
-							{categories.map(cat => (
-								<option value={cat.value}>{cat.label}</option>
-							))}
-						</select>
-					</div>
-					<div class="modal-actions">
-						<button type="button" class="btn btn-cancel" id="modal-cancel-btn">Cancel</button>
-						<button type="submit" class="btn btn-save">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-							Save Changes
-						</button>
-					</div>
-				</form>
-			</div>
-		</div>
-
-		<!-- Variables Copy Modal -->
-		<div class="modal-backdrop" id="variables-modal" aria-hidden="true">
-			<div class="modal-box glass-card modal-box-compact">
-				<div class="modal-header">
-					<h2>Completar variables</h2>
-					<button class="modal-close-btn" id="variables-modal-close-btn" title="Close">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-					</button>
+					<ul class="auth-features">
+						<li>Acceso seguro desde tu cuenta personal</li>
+						<li>Organización simple para tus fragmentos y enlaces</li>
+						<li>Experiencia rápida en escritorio y móvil</li>
+					</ul>
 				</div>
-				<form id="variables-form" class="snippet-form">
-					<p class="variables-modal-copy">Rellena los valores para generar el texto final antes de copiarlo.</p>
-					<div class="variables-fields" id="variables-fields"></div>
-					<div class="modal-actions">
-						<button type="button" class="btn btn-cancel" id="variables-modal-cancel-btn">Cancelar</button>
-						<button type="submit" class="btn btn-save">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-							Copiar texto
+
+				<div class="auth-card glass-card">
+					<div class="auth-toolbar">
+						<button id="auth-theme-toggle" class="theme-toggle" type="button" title="Cambiar tema" aria-label="Cambiar tema">
+							<svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+							<svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
 						</button>
 					</div>
-				</form>
-			</div>
-		</div>
 
-		<!-- Snippet Card HTML Template -->
-		<SnippetCardTemplate />
+					<div class="auth-mode-switch" role="tablist" aria-label="Cambiar formulario de autenticación">
+						<button type="button" class="auth-mode-btn is-active" id="auth-login-tab" data-auth-mode="login">Iniciar sesión</button>
+						<button type="button" class="auth-mode-btn" id="auth-register-tab" data-auth-mode="register">Crear cuenta</button>
+					</div>
+
+					<h2 id="auth-card-title">Iniciar sesión</h2>
+					<p class="auth-copy" id="auth-card-copy">Entra para continuar con tu biblioteca personal.</p>
+					<p class="auth-feedback" id="auth-feedback" hidden></p>
+
+					<form id="auth-login-form" class="auth-form">
+						<div class="form-group">
+							<label for="auth-login-email">Email</label>
+							<input type="email" id="auth-login-email" autocomplete="email" placeholder="tu@email.com" required />
+						</div>
+						<div class="form-group">
+							<label for="auth-login-password">Contraseña</label>
+							<input type="password" id="auth-login-password" autocomplete="current-password" placeholder="Tu contraseña" required />
+						</div>
+						<button type="submit" class="btn btn-save auth-submit-btn" id="auth-login-submit-btn">
+							Entrar
+						</button>
+					</form>
+
+					<form id="auth-register-form" class="auth-form" hidden>
+						<div class="form-group">
+							<label for="auth-register-email">Email</label>
+							<input type="email" id="auth-register-email" autocomplete="email" placeholder="tu@email.com" required />
+						</div>
+						<div class="form-group">
+							<label for="auth-register-password">Contraseña</label>
+							<input type="password" id="auth-register-password" autocomplete="new-password" placeholder="Crea una contraseña" required />
+						</div>
+						<div class="form-group">
+							<label for="auth-register-password-confirm">Confirmar contraseña</label>
+							<input type="password" id="auth-register-password-confirm" autocomplete="new-password" placeholder="Repite la contraseña" required />
+						</div>
+						<button type="submit" class="btn btn-save auth-submit-btn" id="auth-register-submit-btn">
+							Crear cuenta
+						</button>
+					</form>
+				</div>
+			</div>
+		</section>
+
+		<section id="app-shell" hidden>
+			<Header />
+
+			<div class="session-bar glass-card">
+				<div class="session-copy">
+					<span class="session-label">Sesión activa</span>
+					<strong id="session-user-email">-</strong>
+				</div>
+				<button type="button" class="session-logout-btn" id="logout-button">Cerrar sesión</button>
+			</div>
+
+			<div class="app-grid">
+				<aside class="editor-panel">
+					<SnippetForm />
+				</aside>
+
+				<section class="list-panel">
+					<SearchFilter />
+
+					<div class="snippets-grid" id="snippets-container">
+						<div class="loading-state">Cargando snippets...</div>
+					</div>
+				</section>
+			</div>
+
+			<div class="snippet-preview-tooltip" id="snippet-preview-tooltip" aria-hidden="true"></div>
+			
+			<div class="modal-backdrop" id="edit-modal" aria-hidden="true">
+				<div class="modal-box glass-card">
+					<div class="modal-header">
+						<h2>Edit Snippet</h2>
+						<button class="modal-close-btn" id="modal-close-btn" title="Close">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+						</button>
+					</div>
+					<form id="edit-form" class="snippet-form">
+						<input type="hidden" id="edit-snippet-id" />
+						<div class="form-group">
+							<label for="edit-snippet-text">Content</label>
+							<textarea id="edit-snippet-text" rows="5" required></textarea>
+						</div>
+						<div class="form-group">
+							<label for="edit-snippet-description">Description (Optional)</label>
+							<input type="text" id="edit-snippet-description" placeholder="Add a short description..." autocomplete="off" />
+						</div>
+						<div class="form-group">
+							<label>Tags (Optional)</label>
+							<div class="tag-input-wrapper" id="edit-tag-input-wrapper">
+								<div class="tag-chips-row" id="edit-tag-chips-row"></div>
+								<input type="text" id="edit-snippet-tags-input" placeholder="Type a tag and press Enter..." autocomplete="off" />
+							</div>
+							<span class="tag-hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a tag</span>
+						</div>
+						<div class="form-group">
+							<label for="edit-snippet-category">Category</label>
+							<select id="edit-snippet-category">
+								{categories.map(cat => (
+									<option value={cat.value}>{cat.label}</option>
+								))}
+							</select>
+						</div>
+						<div class="modal-actions">
+							<button type="button" class="btn btn-cancel" id="modal-cancel-btn">Cancel</button>
+							<button type="submit" class="btn btn-save">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+								Save Changes
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<div class="modal-backdrop" id="variables-modal" aria-hidden="true">
+				<div class="modal-box glass-card modal-box-compact">
+					<div class="modal-header">
+						<h2>Completar variables</h2>
+						<button class="modal-close-btn" id="variables-modal-close-btn" title="Close">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+						</button>
+					</div>
+					<form id="variables-form" class="snippet-form">
+						<p class="variables-modal-copy">Rellena los valores para generar el texto final antes de copiarlo.</p>
+						<div class="variables-fields" id="variables-fields"></div>
+						<div class="modal-actions">
+							<button type="button" class="btn btn-cancel" id="variables-modal-cancel-btn">Cancelar</button>
+							<button type="submit" class="btn btn-save">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+								Copiar texto
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<SnippetCardTemplate />
+		</section>
 	</main>
 </Layout>
 
@@ -136,6 +211,27 @@ import categories from '../data/categories.json';
 	let exportButton = null;
 	let toastContainer = null;
 	let template = null;
+	let currentSession = null;
+	let sessionUserId = null;
+	let appBootstrapped = false;
+
+	const authScreen = document.getElementById('auth-screen');
+	const appShell = document.getElementById('app-shell');
+	const authCardTitle = document.getElementById('auth-card-title');
+	const authCardCopy = document.getElementById('auth-card-copy');
+	const authFeedback = document.getElementById('auth-feedback');
+	const authModeButtons = document.querySelectorAll('[data-auth-mode]');
+	const authLoginForm = document.getElementById('auth-login-form');
+	const authRegisterForm = document.getElementById('auth-register-form');
+	const authLoginEmailInput = document.getElementById('auth-login-email');
+	const authLoginPasswordInput = document.getElementById('auth-login-password');
+	const authRegisterEmailInput = document.getElementById('auth-register-email');
+	const authRegisterPasswordInput = document.getElementById('auth-register-password');
+	const authRegisterPasswordConfirmInput = document.getElementById('auth-register-password-confirm');
+	const authLoginSubmitBtn = document.getElementById('auth-login-submit-btn');
+	const authRegisterSubmitBtn = document.getElementById('auth-register-submit-btn');
+	const sessionUserEmail = document.getElementById('session-user-email');
+	const logoutButton = document.getElementById('logout-button');
 
 	const variablesModal = document.getElementById('variables-modal');
 	const variablesForm = document.getElementById('variables-form');
@@ -157,6 +253,7 @@ import categories from '../data/categories.json';
 	let pendingCopyButton = null;
 	let pendingCopyText = '';
 	let activePreviewAnchor = null;
+	let authMode = 'login';
 
 	function initDomElements() {
 		form = document.getElementById('snippet-form');
@@ -173,9 +270,230 @@ import categories from '../data/categories.json';
 		template = document.getElementById('snippet-card-template');
 	}
 
+	function setAuthFeedback(message = '', type = 'info') {
+		if (!authFeedback) return;
+		authFeedback.hidden = !message;
+		authFeedback.textContent = message;
+		authFeedback.dataset.state = type;
+	}
+
+	function applyTheme(theme) {
+		if (theme === 'light') {
+			document.documentElement.classList.add('light');
+		} else {
+			document.documentElement.classList.remove('light');
+		}
+		localStorage.setItem('clipbox_theme', theme);
+		updateThemeToggleState();
+	}
+
+	function updateThemeToggleState() {
+		const authThemeToggle = document.getElementById('auth-theme-toggle');
+		if (!authThemeToggle) return;
+		const isLight = document.documentElement.classList.contains('light');
+		authThemeToggle.setAttribute('aria-pressed', String(isLight));
+		authThemeToggle.setAttribute('title', isLight ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+		authThemeToggle.setAttribute('aria-label', isLight ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro');
+	}
+
+	function showAuthMode(mode = 'login') {
+		authMode = mode === 'register' ? 'register' : 'login';
+		const isRegisterMode = authMode === 'register';
+
+		authLoginForm?.toggleAttribute('hidden', isRegisterMode);
+		authRegisterForm?.toggleAttribute('hidden', !isRegisterMode);
+
+		if (authCardTitle) {
+			authCardTitle.textContent = isRegisterMode ? 'Crear cuenta' : 'Iniciar sesión';
+		}
+
+		if (authCardCopy) {
+			authCardCopy.textContent = isRegisterMode
+				? 'Crea tu cuenta para empezar a guardar tus snippets.'
+				: 'Entra para continuar con tu biblioteca personal.';
+		}
+
+		authModeButtons.forEach((button) => {
+			const isActive = button.getAttribute('data-auth-mode') === authMode;
+			button.classList.toggle('is-active', isActive);
+			button.setAttribute('aria-selected', String(isActive));
+		});
+
+		setAuthFeedback('');
+	}
+
+	function setAuthPending(isPending) {
+		if (authLoginSubmitBtn) {
+			authLoginSubmitBtn.disabled = isPending;
+			authLoginSubmitBtn.textContent = isPending ? 'Procesando...' : 'Entrar';
+		}
+		if (authRegisterSubmitBtn) {
+			authRegisterSubmitBtn.disabled = isPending;
+			authRegisterSubmitBtn.textContent = isPending ? 'Procesando...' : 'Crear cuenta';
+		}
+		if (authLoginEmailInput) authLoginEmailInput.disabled = isPending;
+		if (authLoginPasswordInput) authLoginPasswordInput.disabled = isPending;
+		if (authRegisterEmailInput) authRegisterEmailInput.disabled = isPending;
+		if (authRegisterPasswordInput) authRegisterPasswordInput.disabled = isPending;
+		if (authRegisterPasswordConfirmInput) authRegisterPasswordConfirmInput.disabled = isPending;
+	}
+
+	function ensureAppBindings() {
+		if (appBootstrapped) return;
+		loadViewMode();
+		wireTagInputs();
+		wireExportButton();
+		wireViewToggle();
+		wireSortButton();
+		wireCreateForm();
+		wireEditForm();
+		wireVariablesModal();
+		wireModalCloseEvents();
+		wireSearchAndFilters();
+		appBootstrapped = true;
+	}
+
+	function updateAuthVisibility(session) {
+		const isLoggedIn = Boolean(session);
+		authScreen?.toggleAttribute('hidden', isLoggedIn);
+		appShell?.toggleAttribute('hidden', !isLoggedIn);
+
+		if (sessionUserEmail) {
+			sessionUserEmail.textContent = session?.user?.email || 'Usuario autenticado';
+		}
+	}
+
+	function renderLoadError() {
+		if (!snippetsContainer) return;
+		snippetsContainer.innerHTML = `
+			<div class="empty-state">
+				<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+				<p>No fue posible cargar tus snippets en este momento.</p>
+			</div>
+		`;
+	}
+
+	async function syncAuthenticatedApp(session) {
+		currentSession = session;
+		updateAuthVisibility(session);
+
+		if (!session) {
+			sessionUserId = null;
+			snippets = [];
+			setAuthPending(false);
+			return;
+		}
+
+		ensureAppBindings();
+		const nextUserId = session.user?.id || null;
+		if (sessionUserId === nextUserId && snippets.length > 0) return;
+		sessionUserId = nextUserId;
+
+		try {
+			await loadSnippets();
+			renderSnippets();
+		} catch (error) {
+			console.error('Snippet load failed', error);
+			renderLoadError();
+			showToast('No fue posible cargar tus snippets', 'error');
+		}
+	}
+
+	async function handleAuthSubmit(event) {
+		event.preventDefault();
+		const email = authLoginEmailInput?.value.trim() || '';
+		const password = authLoginPasswordInput?.value || '';
+		if (!email || !password) return;
+
+		setAuthFeedback('');
+		setAuthPending(true);
+		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		setAuthPending(false);
+
+		if (error) {
+			setAuthFeedback(error.message, 'error');
+			showToast('No se pudo iniciar sesión', 'error');
+			return;
+		}
+
+		authLoginForm?.reset();
+		setAuthFeedback('');
+		showToast('Sesión iniciada correctamente', 'success');
+	}
+
+	async function handleRegisterSubmit(event) {
+		event.preventDefault();
+		const email = authRegisterEmailInput?.value.trim() || '';
+		const password = authRegisterPasswordInput?.value || '';
+		const passwordConfirm = authRegisterPasswordConfirmInput?.value || '';
+		if (!email || !password || !passwordConfirm) {
+			setAuthFeedback('Completa todos los campos del registro.', 'error');
+			return;
+		}
+
+		if (password !== passwordConfirm) {
+			setAuthFeedback('Las contraseñas no coinciden.', 'error');
+			return;
+		}
+
+		if (password.length < 6) {
+			setAuthFeedback('La contraseña debe tener al menos 6 caracteres.', 'error');
+			return;
+		}
+
+		setAuthFeedback('');
+		setAuthPending(true);
+		const { data, error } = await supabase.auth.signUp({ email, password });
+		setAuthPending(false);
+
+		if (error) {
+			setAuthFeedback(error.message, 'error');
+			showToast('No se pudo crear la cuenta', 'error');
+			return;
+		}
+
+		if (data.session) {
+			authRegisterForm?.reset();
+			setAuthFeedback('');
+			showToast('Cuenta creada correctamente', 'success');
+			return;
+		}
+
+		setAuthFeedback('Cuenta creada. Revisa tu correo si tienes confirmación de email activada.', 'info');
+		authRegisterForm?.reset();
+		showAuthMode('login');
+		showToast('Cuenta creada. Revisa tu correo para confirmarla', 'info');
+	}
+
+	async function handleLogout() {
+		const { error } = await supabase.auth.signOut();
+		if (error) {
+			showToast('No se pudo cerrar la sesión', 'error');
+			return;
+		}
+
+		setAuthFeedback('');
+		showToast('Sesión cerrada', 'info');
+	}
+
+	function wireAuthEvents() {
+		authLoginForm?.addEventListener('submit', handleAuthSubmit);
+		authRegisterForm?.addEventListener('submit', handleRegisterSubmit);
+		authModeButtons.forEach((button) => {
+			button.addEventListener('click', () => showAuthMode(button.getAttribute('data-auth-mode') || 'login'));
+		});
+		document.getElementById('auth-theme-toggle')?.addEventListener('click', () => {
+			const isLight = document.documentElement.classList.contains('light');
+			applyTheme(isLight ? 'dark' : 'light');
+		});
+		logoutButton?.addEventListener('click', handleLogout);
+	}
+
 	function normalizeSnippet(row) {
 		return {
-			id: Number(row.id),
+			id: row.id ?? '',
+			userId: row.user_id ?? null,
+			orderNumber: Number.isFinite(Number(row.order_number)) ? Number(row.order_number) : 0,
 			text: row.text ?? '',
 			description: row.description || undefined,
 			tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
@@ -184,14 +502,21 @@ import categories from '../data/categories.json';
 		};
 	}
 
-	function getSnippetPayload({ text, description, tags, category, pinned }) {
+	function getSnippetPayload({ userId, orderNumber, text, description, tags, category, pinned }) {
 		return {
+			user_id: userId,
+			order_number: orderNumber,
 			text,
 			description: description || null,
 			tags: tags.length > 0 ? tags : [],
 			category,
 			pinned: Boolean(pinned)
 		};
+	}
+
+	function getNextOrderNumber() {
+		const maxOrderNumber = snippets.reduce((max, snippet) => Math.max(max, Number(snippet.orderNumber) || 0), 0);
+		return maxOrderNumber + 1;
 	}
 
 	function renderFormTags() {
@@ -353,12 +678,18 @@ import categories from '../data/categories.json';
 
 	async function loadSnippets() {
 		if (snippetsContainer) {
-			snippetsContainer.innerHTML = '<div class="loading-state">Loading snippets...</div>';
+			snippetsContainer.innerHTML = '<div class="loading-state">Cargando snippets...</div>';
+		}
+
+		if (!sessionUserId) {
+			snippets = [];
+			return;
 		}
 
 		const { data, error } = await supabase
 			.from('snippets')
-			.select('id, text, description, tags, category, pinned');
+			.select('id, user_id, order_number, text, description, tags, category, pinned')
+			.eq('user_id', sessionUserId);
 
 		if (error) {
 			throw error;
@@ -539,7 +870,12 @@ import categories from '../data/categories.json';
 	}
 
 	async function deleteSnippet(id) {
-		const { error } = await supabase.from('snippets').delete().eq('id', id);
+		if (!sessionUserId) return;
+		const { error } = await supabase
+			.from('snippets')
+			.delete()
+			.eq('id', id)
+			.eq('user_id', sessionUserId);
 		if (error) {
 			console.error('Delete failed', error);
 			showToast('Failed to delete snippet', 'error');
@@ -552,6 +888,7 @@ import categories from '../data/categories.json';
 	}
 
 	async function togglePin(id) {
+		if (!sessionUserId) return;
 		const snippet = snippets.find((item) => item.id === id);
 		if (!snippet) return;
 
@@ -559,7 +896,8 @@ import categories from '../data/categories.json';
 		const { error } = await supabase
 			.from('snippets')
 			.update({ pinned: nextPinned })
-			.eq('id', id);
+			.eq('id', id)
+			.eq('user_id', sessionUserId);
 
 		if (error) {
 			console.error('Pin update failed', error);
@@ -677,7 +1015,13 @@ import categories from '../data/categories.json';
 			return matchesCategory && matchesSearch;
 		});
 
-		filtered.sort((a, b) => sortOrderAscending ? a.id - b.id : b.id - a.id);
+		filtered.sort((a, b) => {
+			const orderDelta = sortOrderAscending
+				? a.orderNumber - b.orderNumber
+				: b.orderNumber - a.orderNumber;
+			if (orderDelta !== 0) return orderDelta;
+			return String(a.id).localeCompare(String(b.id));
+		});
 
 		if (filtered.length === 0) {
 			snippetsContainer.innerHTML = `
@@ -804,6 +1148,8 @@ import categories from '../data/categories.json';
 			if (!text) return;
 
 			const payload = getSnippetPayload({
+				userId: sessionUserId,
+				orderNumber: getNextOrderNumber(),
 				text,
 				description,
 				tags,
@@ -814,7 +1160,7 @@ import categories from '../data/categories.json';
 			const { data, error } = await supabase
 				.from('snippets')
 				.insert(payload)
-				.select('id, text, description, tags, category, pinned')
+				.select('id, user_id, order_number, text, description, tags, category, pinned')
 				.single();
 
 			if (error) {
@@ -835,7 +1181,7 @@ import categories from '../data/categories.json';
 		editForm.addEventListener('submit', async (e) => {
 			e.preventDefault();
 
-			const id = Number(editIdInput.value);
+			const id = editIdInput.value;
 			const text = editTextInput.value.trim();
 			if (!text) return;
 
@@ -845,6 +1191,8 @@ import categories from '../data/categories.json';
 			}
 
 			const payload = getSnippetPayload({
+				userId: sessionUserId,
+				orderNumber: snippets.find((snippet) => snippet.id === id)?.orderNumber ?? 0,
 				text,
 				description: editDescInput?.value.trim() || '',
 				tags: [...editTags],
@@ -855,7 +1203,8 @@ import categories from '../data/categories.json';
 			const { error } = await supabase
 				.from('snippets')
 				.update(payload)
-				.eq('id', id);
+				.eq('id', id)
+				.eq('user_id', sessionUserId);
 
 			if (error) {
 				console.error('Update failed', error);
@@ -944,35 +1293,29 @@ import categories from '../data/categories.json';
 
 	async function init() {
 		initDomElements();
-		loadViewMode();
-		wireTagInputs();
-		wireExportButton();
-		wireViewToggle();
-		wireSortButton();
-		wireCreateForm();
-		wireEditForm();
-		wireVariablesModal();
-		wireModalCloseEvents();
-		wireSearchAndFilters();
+		updateThemeToggleState();
+		wireAuthEvents();
+		showAuthMode('login');
 
-		try {
-			await loadSnippets();
-			renderSnippets();
-		} catch (error) {
-			console.error('Supabase load failed', error);
-			if (snippetsContainer) {
-				snippetsContainer.innerHTML = `
-					<div class="empty-state">
-						<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-						<p>No fue posible cargar los snippets desde Supabase.</p>
-					</div>
-				`;
-			}
-			showToast('Failed to load snippets from Supabase', 'error');
+		supabase.auth.onAuthStateChange((_event, session) => {
+			void syncAuthenticatedApp(session);
+		});
+
+		const { data, error } = await supabase.auth.getSession();
+		if (error) {
+			console.error('Session bootstrap failed', error);
+			setAuthFeedback('No fue posible recuperar la sesión actual.', 'error');
+			return;
 		}
+
+		await syncAuthenticatedApp(data.session);
 	}
 
-	init();
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', () => void init(), { once: true });
+	} else {
+		void init();
+	}
 </script>
 
 <style>
@@ -987,6 +1330,383 @@ import categories from '../data/categories.json';
 		gap: 2.5rem;
 	}
 
+	:where([hidden]) {
+		display: none !important;
+	}
+
+	.auth-screen {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: calc(100vh - 5rem);
+	}
+
+	.auth-shell {
+		width: 100%;
+		display: grid;
+		grid-template-columns: minmax(0, 1.1fr) minmax(340px, 440px);
+		gap: 2rem;
+		align-items: stretch;
+	}
+
+	.auth-intro {
+		padding: 2.2rem;
+		border-radius: 28px;
+		background:
+			radial-gradient(circle at top left, rgba(99, 102, 241, 0.24), transparent 38%),
+			linear-gradient(180deg, rgba(16, 19, 33, 0.78), rgba(12, 14, 25, 0.9));
+		border: 1px solid rgba(99, 102, 241, 0.14);
+		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 2rem;
+	}
+
+	.auth-brand {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.auth-brand-icon {
+		width: 3.5rem;
+		height: 3.5rem;
+		border-radius: 16px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, var(--primary), #4f46e5);
+		color: white;
+		box-shadow: 0 10px 30px rgba(99, 102, 241, 0.28);
+		flex-shrink: 0;
+	}
+
+	.auth-brand h1 {
+		margin: 0;
+		font-family: var(--font-title);
+		font-size: clamp(2rem, 4vw, 2.9rem);
+		line-height: 1;
+	}
+
+	.auth-brand p {
+		margin: 0.85rem 0 0;
+		max-width: 36rem;
+		color: var(--text-secondary);
+		font-size: 1rem;
+		line-height: 1.75;
+	}
+
+	.auth-features {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.8rem;
+	}
+
+	.auth-features li {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		color: var(--text-secondary);
+		font-size: 0.96rem;
+	}
+
+	.auth-features li::before {
+		content: '';
+		width: 0.6rem;
+		height: 0.6rem;
+		border-radius: 999px;
+		background: linear-gradient(135deg, #818cf8, #22c55e);
+		box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.12);
+		flex-shrink: 0;
+	}
+
+	.auth-card {
+		align-self: center;
+		width: 100%;
+		max-width: 460px;
+		padding: 1.75rem;
+		border-radius: 24px;
+		background: linear-gradient(180deg, rgba(17, 20, 32, 0.92), rgba(15, 18, 29, 0.96));
+		border: 1px solid rgba(99, 102, 241, 0.14);
+		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+	}
+
+	.auth-toolbar {
+		display: flex;
+		justify-content: flex-end;
+		margin-bottom: 1rem;
+	}
+
+	.auth-toolbar .theme-toggle {
+		background: var(--bg-card);
+		border: 1px solid var(--border-color);
+		color: var(--text-muted);
+		cursor: pointer;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+		flex-shrink: 0;
+		padding: 0.55rem;
+	}
+
+	.auth-toolbar .theme-toggle:hover {
+		background: var(--bg-hover);
+		border-color: var(--primary);
+		color: var(--primary);
+		transform: rotate(12deg);
+	}
+
+	.auth-toolbar .icon-sun {
+		display: none;
+	}
+
+	.auth-toolbar .icon-moon {
+		display: block;
+	}
+
+	html.light .auth-toolbar .icon-sun {
+		display: block;
+	}
+
+	html.light .auth-toolbar .icon-moon {
+		display: none;
+	}
+
+	.auth-mode-switch {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem;
+		padding: 0.35rem;
+		margin-bottom: 1.25rem;
+		border-radius: 14px;
+		background: rgba(99, 102, 241, 0.08);
+		border: 1px solid rgba(99, 102, 241, 0.14);
+	}
+
+	.auth-mode-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.75rem 0.9rem;
+		border: none;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--text-muted);
+		font-family: inherit;
+		font-size: 0.9rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background 0.2s, color 0.2s, transform 0.2s;
+	}
+
+	.auth-mode-btn:hover {
+		color: var(--text-primary);
+	}
+
+	.auth-mode-btn.is-active {
+		background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(79, 70, 229, 0.95));
+		color: white;
+		box-shadow: 0 10px 24px rgba(99, 102, 241, 0.24);
+	}
+
+	.auth-card h2 {
+		margin-bottom: 0.6rem;
+	}
+
+	.auth-copy {
+		margin: 0 0 1.35rem;
+		color: var(--text-muted);
+		line-height: 1.65;
+		font-size: 0.95rem;
+	}
+
+	.auth-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.1rem;
+	}
+
+	.auth-form .form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.auth-form .form-group label {
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.auth-form .form-group input {
+		appearance: none;
+		-webkit-appearance: none;
+		width: 100%;
+		box-sizing: border-box;
+		min-height: 3rem;
+		padding: 0.85rem 0.95rem;
+		border-radius: 12px;
+		border: 1px solid rgba(99, 102, 241, 0.14);
+		background: rgba(255, 255, 255, 0.04);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 0.96rem;
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+	}
+
+	.auth-form .form-group input::placeholder {
+		color: var(--text-muted);
+		opacity: 0.72;
+	}
+
+	.auth-form .form-group input:focus {
+		border-color: rgba(129, 140, 248, 0.75);
+		background: rgba(255, 255, 255, 0.06);
+		box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+	}
+
+	.auth-feedback {
+		margin: 0;
+		padding: 0.85rem 1rem;
+		border-radius: 12px;
+		border: 1px solid transparent;
+		font-size: 0.88rem;
+		line-height: 1.5;
+	}
+
+	.auth-feedback[data-state='error'] {
+		background: rgba(239, 68, 68, 0.1);
+		border-color: rgba(239, 68, 68, 0.24);
+		color: #fecaca;
+	}
+
+	.auth-feedback[data-state='info'] {
+		background: rgba(59, 130, 246, 0.1);
+		border-color: rgba(59, 130, 246, 0.24);
+		color: #bfdbfe;
+	}
+
+	.auth-submit-btn,
+	.auth-secondary-btn {
+		width: 100%;
+	}
+
+	.auth-submit-btn {
+		min-height: 3rem;
+		margin-top: 0.25rem;
+		font-size: 0.95rem;
+	}
+
+	html.light .auth-intro {
+		background:
+			radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 42%),
+			linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 246, 255, 0.98));
+		border-color: rgba(99, 102, 241, 0.12);
+		box-shadow: 0 20px 46px rgba(15, 23, 42, 0.08), 0 10px 26px rgba(99, 102, 241, 0.08);
+	}
+
+	html.light .auth-brand h1 {
+		color: #0f172a;
+	}
+
+	html.light .auth-card {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 248, 255, 0.98));
+		border-color: rgba(99, 102, 241, 0.14);
+		box-shadow: 0 20px 46px rgba(15, 23, 42, 0.1), 0 10px 24px rgba(99, 102, 241, 0.08);
+	}
+
+	html.light .auth-mode-switch {
+		background: rgba(99, 102, 241, 0.06);
+		border-color: rgba(99, 102, 241, 0.12);
+	}
+
+	html.light .auth-mode-btn:not(.is-active) {
+		color: #64748b;
+	}
+
+	html.light .auth-mode-btn:not(.is-active):hover {
+		color: #1e293b;
+	}
+
+	html.light .auth-mode-btn.is-active {
+		color: white;
+	}
+
+	html.light .auth-form .form-group input {
+		background: rgba(255, 255, 255, 0.92);
+		border-color: rgba(99, 102, 241, 0.16);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+	}
+
+	html.light .auth-form .form-group input:focus {
+		background: #ffffff;
+		border-color: rgba(99, 102, 241, 0.42);
+		box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+	}
+
+	html.light .auth-toolbar .theme-toggle {
+		background: var(--bg-card);
+		border-color: var(--border-color);
+		color: var(--text-muted);
+	}
+
+	.session-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1rem 1.25rem;
+	}
+
+	.session-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.18rem;
+	}
+
+	.session-label {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.session-copy strong {
+		font-size: 0.95rem;
+		color: var(--text-primary);
+	}
+
+	.session-logout-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.7rem 1rem;
+		border-radius: 12px;
+		border: 1px solid var(--border-color);
+		background: var(--bg-hover);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s, border-color 0.2s, transform 0.2s;
+	}
+
+	.session-logout-btn:hover {
+		background: rgba(239, 68, 68, 0.1);
+		border-color: rgba(239, 68, 68, 0.3);
+		transform: translateY(-1px);
+	}
+
 	/* Layout Grid */
 	.app-grid {
 		display: grid;
@@ -996,8 +1716,35 @@ import categories from '../data/categories.json';
 	}
 
 	@media (max-width: 900px) {
+		.auth-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.auth-intro {
+			padding: 1.5rem;
+		}
+
 		.app-grid {
 			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.app-container {
+			padding: 1.25rem 1rem 2rem;
+		}
+
+		.auth-screen {
+			min-height: auto;
+		}
+
+		.auth-brand {
+			flex-direction: column;
+		}
+
+		.session-bar {
+			flex-direction: column;
+			align-items: stretch;
 		}
 	}
 
