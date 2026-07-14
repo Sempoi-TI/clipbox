@@ -254,6 +254,24 @@ import categories from '../data/categories.json';
 	let pendingCopyText = '';
 	let activePreviewAnchor = null;
 	let authMode = 'login';
+	const DEBUG_SERVER_URL = 'http://127.0.0.1:7777/event';
+	const DEBUG_SESSION_ID = 'auth-clicks-docker';
+
+	function debugReport(hypothesisId, location, msg, data = {}) {
+		fetch(DEBUG_SERVER_URL, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				sessionId: DEBUG_SESSION_ID,
+				runId: 'pre-fix',
+				hypothesisId,
+				location,
+				msg,
+				data,
+				ts: Date.now()
+			})
+		}).catch(() => {});
+	}
 
 	function initDomElements() {
 		form = document.getElementById('snippet-form');
@@ -278,6 +296,9 @@ import categories from '../data/categories.json';
 	}
 
 	function applyTheme(theme) {
+		// #region debug-point D:apply-theme
+		debugReport('D', 'src/pages/index.astro:applyTheme', 'applyTheme called', { theme });
+		// #endregion
 		if (theme === 'light') {
 			document.documentElement.classList.add('light');
 		} else {
@@ -289,6 +310,11 @@ import categories from '../data/categories.json';
 
 	function updateThemeToggleState() {
 		const authThemeToggle = document.getElementById('auth-theme-toggle');
+		// #region debug-point B:update-theme-toggle
+		debugReport('B', 'src/pages/index.astro:updateThemeToggleState', 'updateThemeToggleState called', {
+			hasThemeToggle: Boolean(authThemeToggle)
+		});
+		// #endregion
 		if (!authThemeToggle) return;
 		const isLight = document.documentElement.classList.contains('light');
 		authThemeToggle.setAttribute('aria-pressed', String(isLight));
@@ -297,6 +323,12 @@ import categories from '../data/categories.json';
 	}
 
 	function showAuthMode(mode = 'login') {
+		// #region debug-point C:show-auth-mode
+		debugReport('C', 'src/pages/index.astro:showAuthMode', 'showAuthMode called', {
+			mode,
+			buttonCount: authModeButtons.length
+		});
+		// #endregion
 		authMode = mode === 'register' ? 'register' : 'login';
 		const isRegisterMode = authMode === 'register';
 
@@ -477,12 +509,32 @@ import categories from '../data/categories.json';
 	}
 
 	function wireAuthEvents() {
+		// #region debug-point A:wire-auth-events
+		debugReport('A', 'src/pages/index.astro:wireAuthEvents', 'binding auth events', {
+			modeButtonCount: authModeButtons.length,
+			hasLoginForm: Boolean(authLoginForm),
+			hasRegisterForm: Boolean(authRegisterForm),
+			hasThemeToggle: Boolean(document.getElementById('auth-theme-toggle'))
+		});
+		// #endregion
 		authLoginForm?.addEventListener('submit', handleAuthSubmit);
 		authRegisterForm?.addEventListener('submit', handleRegisterSubmit);
 		authModeButtons.forEach((button) => {
-			button.addEventListener('click', () => showAuthMode(button.getAttribute('data-auth-mode') || 'login'));
+			button.addEventListener('click', () => {
+				// #region debug-point D:mode-button-click
+				debugReport('D', 'src/pages/index.astro:wireAuthEvents:modeButton', 'auth mode button clicked', {
+					mode: button.getAttribute('data-auth-mode') || 'login'
+				});
+				// #endregion
+				showAuthMode(button.getAttribute('data-auth-mode') || 'login');
+			});
 		});
 		document.getElementById('auth-theme-toggle')?.addEventListener('click', () => {
+			// #region debug-point D:theme-toggle-click
+			debugReport('D', 'src/pages/index.astro:wireAuthEvents:themeToggle', 'theme toggle clicked', {
+				isLightBefore: document.documentElement.classList.contains('light')
+			});
+			// #endregion
 			const isLight = document.documentElement.classList.contains('light');
 			applyTheme(isLight ? 'dark' : 'light');
 		});
@@ -1292,6 +1344,24 @@ import categories from '../data/categories.json';
 	}
 
 	async function init() {
+		// #region debug-point B:init-entry
+		debugReport('B', 'src/pages/index.astro:init', 'init started', {
+			readyState: document.readyState
+		});
+		window.addEventListener('error', (event) => {
+			debugReport('B', 'src/pages/index.astro:window:error', 'window error captured', {
+				message: event.message,
+				filename: event.filename,
+				lineno: event.lineno,
+				colno: event.colno
+			});
+		});
+		window.addEventListener('unhandledrejection', (event) => {
+			debugReport('B', 'src/pages/index.astro:window:unhandledrejection', 'unhandled rejection captured', {
+				reason: String(event.reason)
+			});
+		});
+		// #endregion
 		initDomElements();
 		updateThemeToggleState();
 		wireAuthEvents();
