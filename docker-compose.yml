@@ -1,0 +1,15 @@
+services:
+  clipbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clipbox
+    ports:
+      - "900:4321"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4321
+    restart: unless-stopped
